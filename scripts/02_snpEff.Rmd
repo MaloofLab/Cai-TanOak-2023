@@ -1,0 +1,58 @@
+---
+title: "SNPeff"
+output: html_notebook
+---
+
+This documents using [SNPeff](https://pcingola.github.io/SnpEff/) to annotate SNPs in TanOak with their functional consequences.
+
+## Install SNPeff
+
+```{bash, eval=FALSE}
+cd /usr/local/bin
+wget https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
+unzip snpEff_latest_core.zip
+cp -s snpEff/snpEff.jar
+```
+
+## build genome index
+
+```{bash, eval=FALSE}
+echo "tanoak.v1.genome : Tanoak" >> /usr/local/bin/snpEff/snpEff.config
+
+mkdir /usr/local/bin/snpEff/data
+cd /usr/local/bin/snpEff/data
+
+mkdir tanoak.v1
+cd tanoak.v1
+
+cp /Volumes/GoogleDrive/Shared\ drives/TanOak/PanGenome_ONT_pilon.fasta ./
+gzip PanGenome_ONT_pilon.fasta
+mv PanGenome_ONT_pilon.fasta.gz tanoak.v1.fa.gz
+
+cp /Volumes/GoogleDrive/Shared\ drives/TanOak/PanGenome_ONT_pilon.maker.gff ./
+gzip PanGenome_ONT_pilon.maker.gff
+mv PanGenome_ONT_pilon.maker.gff.gz genes.gff.gz
+
+cd /usr/local/bin/snpEff
+java -jar snpEff.jar build -gff3 -v tanoak.v1
+```
+
+
+check it
+
+```{bash, eval=FALSE}
+cd /usr/local/bin/snpEff
+java -jar snpEff.jar dump   tanoak.v1  | head -n 40
+```
+
+## run annotation
+
+```{bash, eval=FALSE}
+cd ~/git/TanOak/output
+
+time java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1 /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.vcf.gz > cohort.genotyped.snpEff.vcf
+
+```
+
+
+
