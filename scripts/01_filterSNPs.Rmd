@@ -1,0 +1,304 @@
+---
+title: "01_SNP_filtering"
+author: "Julin Maloof"
+date: "11/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Taking an initial look at the SNPs
+
+Plan:
+* Filter
+  * QUAL
+  * DEPTH
+* Simple Association?
+* Then annotate
+* PCA colored by resistnace
+* LD extent for large contigs
+
+## setup
+
+```{r}
+library(tidyverse)
+library(VariantAnnotation)
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+```
+
+```{r}
+dir(datadir)
+```
+
+Index the fasta file.  Only needs to be done once
+```{bash, eval=FALSE}
+samtools faidx '/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.fasta'
+```
+
+```{r}
+contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.fasta.fai"), 
+                  col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
+  dplyr::select(name, length) %>%
+  arrange(desc(length))
+head(contig.lengths, 10)
+```
+
+## take a look at a single contig
+
+load it
+```{r}
+tab <- TabixFile(file.path(datadir, "cohort.genotyped.vcf.gz"))
+vcfVR <- readVcfAsVRanges(tab, param=GRanges(seqnames = contig.lengths$name[1],
+                                  ranges = IRanges(start = 1, end=contig.lengths$length[1])))
+vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[1],
+                                  ranges = IRanges(start = 1, end=contig.lengths$length[1])))
+```
+
+### quality
+```{r}
+tibble(QUAL=rowRanges(vcf)$QUAL) %>% 
+  ggplot(aes(x=QUAL)) +
+  geom_histogram(fill="skyblue") +
+  scale_x_log10() +
+  ggtitle("Quality") +
+  xlab("QUAL") +
+  ylab("Count")
+min(rowRanges(vcf)$QUAL)
+```
+
+### Genotyped allele number
+
+This is the number of allele genotype calls made.  With 14 samples, the max here is 28
+```{r}
+info(vcf)$AN %>% tibble(AN=.) %>%
+  ggplot(aes(x=AN)) +
+  geom_histogram(fill="red", binwidth = 1) +
+  ggtitle("Number of Alleles Called") +
+  xlab("Allele Number (AN)") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(2,28,2))
+```
+
+### Number of alternative alleles
+"1" means a b
+```{r}
+sapply(info(vcf)$AC, length) %>% tibble(AC=.) %>%
+  ggplot(aes(x=AC)) +
+  geom_histogram(fill="springgreen2", binwidth = 1) +
+  ggtitle("Number of Alternate Alleles") +
+  xlab("Alternative alleles") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(1,6,1))
+```
+
+Overall this looks like little filtering is needed.  But let's do a little.
+
+```{r}
+vcf.filter <- vcf[rowRanges(vcf)$QUAL > 50 &
+                    sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
+                    info(vcf)$AN == 28] # require complete genotype info for now 
+length(vcf)
+length(vcf.filter)
+```
+
+from this, the geno info is probably sufficient
+
+Could do a VRanges object and convert to tibble:
+```{r}
+system.time(
+  vcf.filter.VR <- as(vcf.filter, "VRanges") #50 seconds
+)
+```
+
+
+```{r}
+system.time(
+  VRtibble <- tibble(
+                 seqname=as.character(seqnames(vcf.filter.VR)),
+                 start=start(vcf.filter.VR),
+                 end=end(vcf.filter.VR),
+                 sample=as.character(sampleNames(vcf.filter.VR)),
+                 ref=ref(vcf.filter.VR),
+                 alt=alt(vcf.filter.VR),
+                 RD=refDepth(vcf.filter.VR),
+                 AD=altDepth(vcf.filter.VR),
+                 as.data.frame(mcols(vcf.filter.VR)[c("QUAL", "GT", "GQ", "PL" )])
+                 ) %>%
+    mutate(snpID=str_c(seqname,start,sep=":"),
+           GT=str_replace(GT, stringr::fixed("|"), "/"))
+) #6 seconds
+
+head(VRtibble)
+```
+
+```{r}
+system.time(
+  vcf.GT <- t(geno(vcf.filter)$GT) %>% 
+    apply(2, str_replace, stringr::fixed("|"), "/")
+) # 9 seconds
+rownames(vcf.GT) <- samples(header(vcf.filter))
+vcf.GT[,1:10]
+```
+
+### practice associations
+
+get the data
+```{r}
+
+pheno <- read_csv("../input/TanOakResistance.csv") %>%
+  mutate(nameMatch=str_replace_all(Tanoak, "-","."),
+           nameMatch=str_replace(nameMatch, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) %>%
+  filter(nameMatch %in% samples(header(vcf.filter))) %>%
+  arrange(Rank_Sorting)
+  
+
+pheno
+
+```
+
+#### For the tibble:
+```{r}
+VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
+```
+
+```{r}
+system.time(
+  VRtibble <- VRtibble %>% dplyr::select(snpID, sample, GT, Tolerance_Resistance) %>%
+    group_by(snpID) %>%
+    nest(data=c(sample, GT, Tolerance_Resistance))
+) #11 seconds
+head(VRtibble)
+```
+
+```{r}
+fisherp <- function(data){ #get p value from fisher test
+  if(length(unique(data$GT))==1) 
+    return(NA) 
+  tb <- table(data$GT, data$Tolerance_Resistance)
+  if(min(tb)==0) return(NA) 
+  fisher.test(tb) %>%
+    magrittr::extract("p.value") %>% 
+    unlist() %>%
+    return()
+}
+  
+
+system.time(
+test <- VRtibble %>%
+  mutate(fisher=map_dbl(data, fisherp))
+) # 227 seconds
+test %>% arrange(fisher) %>% head
+```
+
+```{r}
+test2 <- VRtibble %>% filter(snpID=="445_pilon:11580") %>% pull(data) %>% magrittr::extract2(1)
+str(test2)
+table(test2$GT, test2$Tolerance_Resistance) 
+fisherp(test2)
+```
+
+
+#### For the GT matrix
+
+```{r}
+#merge is too slow, so roll my own
+
+pheno2 <- pheno %>%
+  column_to_rownames("nameMatch") %>%
+  dplyr::select(Tolerance_Resistance) 
+
+vcf.GT.pheno <- cbind(pheno2,vcf.GT[rownames(pheno2),])
+
+vcf.GT.pheno[,1:10]
+```
+
+```{r}
+fisherp2 <- function(gt,pheno) {
+    if(length(unique(gt))==1) 
+    return(NA) 
+  tb <- table(gt, pheno)
+  if(min(tb)==0) return(NA) 
+  fisher.test(tb) %>%
+    magrittr::extract("p.value") %>% 
+    unlist() %>%
+    return()
+}
+```
+
+```{r}
+  fisherp.result <- tibble(varID=colnames(vcf.GT.pheno)[-1],
+                           fisherp=apply(vcf.GT.pheno[,-1], 2, fisherp2, vcf.GT.pheno$Tolerance_Resistance)
+  )
+```
+
+## loop through all contigs for Fisher's test
+
+### constant data and functions
+
+```{r}
+contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.fasta.fai"), 
+                  col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
+  dplyr::select(name, length) %>%
+  arrange(desc(length))
+
+tab <- TabixFile(file.path(datadir, "cohort.genotyped.vcf.gz"))
+
+fisherp2 <- function(gt,pheno) {
+    if(length(unique(gt))==1) 
+    return(NA) 
+  tb <- table(gt, pheno)
+  if(min(tb)==0) return(NA) 
+  fisher.test(tb) %>%
+    magrittr::extract("p.value") %>% 
+    unlist() %>%
+    return()
+}
+
+pheno <- read_csv("../input/TanOakResistance.csv") %>%
+  mutate(nameMatch=str_replace_all(Tanoak, "-","."),
+           nameMatch=str_replace(nameMatch, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) 
+```
+
+
+### loop it
+```{r, warning=FALSE}
+if(file.exists("../output/fisherp.csv")) file.remove("../output/fisherp.csv")
+
+for(i in 1:nrow(contig.lengths)) {
+  
+  vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[i],
+                                     ranges = IRanges(start = 1, end=contig.lengths$length[i])))
+  
+  sampleIDs <- samples(header(vcf))
+  
+  vcf <- vcf[rowRanges(vcf)$QUAL > 50 &
+               sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
+               info(vcf)$AN == 28] # require complete genotype info for now 
+  
+  vcf.GT <- t(geno(vcf)$GT) %>% 
+    apply(2, str_replace, stringr::fixed("|"), "/")
+  rownames(vcf.GT) <- sampleIDs
+  
+  pheno2 <- pheno %>%
+    filter(nameMatch %in% rownames(vcf.GT)) %>%
+  column_to_rownames("nameMatch") %>%
+    dplyr::select(Tolerance_Resistance) 
+  
+  vcf.GT.pheno <- cbind(pheno2,vcf.GT[rownames(pheno2),])
+  
+  fisherp.result <- tibble(index=i,
+                           varID=colnames(vcf.GT.pheno)[-1],
+                           fisherp=apply(vcf.GT.pheno[,-1], 2, fisherp2, vcf.GT.pheno$Tolerance_Resistance)
+  )
+  
+  fisherp.result <- na.omit(fisherp.result)
+  
+  write_csv(fisherp.result, "../output/fisherp.csv", append = TRUE)
+
+}
+```
+
+
+
