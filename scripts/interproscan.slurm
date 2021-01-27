@@ -2,9 +2,9 @@
 #SBATCH --partition=production # partition to submit to
 #SBATCH --job-name=interproscan # Job name
 #SBATCH --nodes=1 # single node, anything more than 1 will not run
-#SBATCH --ntasks=1 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
+#SBATCH --ntasks=16 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
 #SBATCH --mem-per-cpu=2000 # in MB, memory pool all cores, default is 2GB per cpu
-#SBATCH --time=0-00:30:00  # expected time of completion in hours, minutes, seconds, default 1-day
+#SBATCH --time=2-00:30:00  # expected time of completion in hours, minutes, seconds, default 1-day
 #SBATCH --output=ips_%A.out # STDOUT
 #SBATCH --error=ips_%A.err # STDERR
 #SBATCH --mail-user=jnmaloof@ucdavis.edu #
