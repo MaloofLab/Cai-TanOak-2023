@@ -1,0 +1,248 @@
+---
+title: "04 parse snpEff vcf"
+output: html_notebook
+---
+
+The goal here is to find genes that have changes predicted to effect protein function and where those changes have different frequencies in the two classes.
+
+## setup
+
+```{r}
+library(tidyverse)
+library(VariantAnnotation)
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+```
+
+```{r}
+dir(datadir)
+```
+
+Index the fasta file.  Only needs to be done once
+```{bash, eval=FALSE}
+samtools faidx '/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.fasta'
+```
+
+
+
+## filter for variants of moderate or high effect
+
+```{bash, eval=FALSE}
+cd "/Volumes/GoogleDrive/Shared drives/TanOak"
+
+bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.genotyped.snpEff.vcf.gz > cohort.genotyped.snpEff.filtered.vcf.bgz
+
+tabix cohort.genotyped.snpEff.filtered.vcf.bgz
+```
+
+## make contig lengths file for those contigs remaining after filtering
+
+```{r}
+contig.lengths <-
+  system("bcftools view -h '/Volumes/GoogleDrive/Shared drives/TanOak/cohort.genotyped.snpEff.filtered.vcf.bgz' | grep contig", inter=TRUE) %>%
+  as_tibble() %>%
+  mutate(value=str_remove_all(value, "(##contig=<ID=)|(length=)|>")) %>%
+  separate(value, into = c("name", "length"), sep=",", convert = TRUE )
+contig.lengths
+```
+
+
+## take a look at a single contig
+
+load it
+```{r}
+tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.filtered.vcf.bgz"))
+vcfVR <- readVcfAsVRanges(tab, param=GRanges(seqnames = contig.lengths$name[1],
+                                  ranges = IRanges(start = 1, end=contig.lengths$length[1])))
+vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[1],
+                                  ranges = IRanges(start = 1, end=contig.lengths$length[1])))
+```
+
+### quality
+```{r}
+tibble(QUAL=rowRanges(vcf)$QUAL) %>% 
+  ggplot(aes(x=QUAL)) +
+  geom_histogram(fill="skyblue") +
+  scale_x_log10() +
+  ggtitle("Quality") +
+  xlab("QUAL") +
+  ylab("Count")
+min(rowRanges(vcf)$QUAL)
+```
+
+### Genotyped allele number
+This is the number of allele genotype calls made.  With 14 samples, the max here is 28
+```{r}
+info(vcf)$AN %>% tibble(AN=.) %>%
+  ggplot(aes(x=AN)) +
+  geom_histogram(fill="red", binwidth = 1) +
+  ggtitle("Number of Alleles Called") +
+  xlab("Allele Number (AN)") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(2,28,2))
+```
+
+### Number of alternative alleles
+"1" means a b
+```{r}
+sapply(info(vcf)$AC, length) %>% tibble(AC=.) %>%
+  ggplot(aes(x=AC)) +
+  geom_histogram(fill="springgreen2", binwidth = 1) +
+  ggtitle("Number of Alternate Alleles") +
+  xlab("Alternative alleles") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(1,6,1))
+```
+
+Overall this looks like little filtering is needed.  But let's do a little.
+
+```{r}
+vcf.filter <- vcf[rowRanges(vcf)$QUAL > 50 &
+                    sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
+                    info(vcf)$AN == 28] # require complete genotype info for now 
+length(vcf)
+length(vcf.filter)
+```
+
+Could do a VRanges object and convert to tibble:
+```{r}
+system.time(
+  vcf.filter.VR <- as(vcf.filter, "VRanges") 
+)
+```
+
+
+```{r}
+system.time(
+  VRtibble <- tibble(
+                 seqname=as.character(seqnames(vcf.filter.VR)),
+                 start=start(vcf.filter.VR),
+                 end=end(vcf.filter.VR),
+                 sample=as.character(sampleNames(vcf.filter.VR)),
+                 ref=ref(vcf.filter.VR),
+                 alt=alt(vcf.filter.VR),
+                 RD=refDepth(vcf.filter.VR),
+                 AD=altDepth(vcf.filter.VR),
+                 as.data.frame(mcols(vcf.filter.VR)[c("QUAL", "GT", "GQ", "PL", "ANN" )])
+                 ) %>%
+    mutate(snpID=str_c(seqname,start,sep=":"),
+           GT=str_replace(GT, stringr::fixed("|"), "/")) 
+) #6 seconds
+
+```
+
+reformat the snpEff annotation into tibble form
+```{r}
+annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+
+VRtibble <- VRtibble %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4") ) %>%
+  pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) %>%
+  separate(ANN, into=annnames, sep = "\\|") %>%
+filter(impact != "MODIFIER")
+
+VRtibble
+```
+
+
+## Can I do all at once, since I have filtered this down to a reasonable size?
+
+
+```{r}
+tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.filtered.vcf.bgz"))
+
+system.time(
+  vcf <-  readVcf(tab)
+  )
+```
+
+
+### quality
+```{r}
+tibble(QUAL=rowRanges(vcf)$QUAL) %>% 
+  ggplot(aes(x=QUAL)) +
+  geom_histogram(fill="skyblue") +
+  scale_x_log10() +
+  ggtitle("Quality") +
+  xlab("QUAL") +
+  ylab("Count")
+min(rowRanges(vcf)$QUAL)
+```
+
+### Genotyped allele number
+This is the number of allele genotype calls made.  With 14 samples, the max here is 28
+```{r}
+info(vcf)$AN %>% tibble(AN=.) %>%
+  ggplot(aes(x=AN)) +
+  geom_histogram(fill="red", binwidth = 1) +
+  ggtitle("Number of Alleles Called") +
+  xlab("Allele Number (AN)") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(2,28,2))
+```
+
+### Number of alternative alleles
+"1" means a b
+```{r}
+sapply(info(vcf)$AC, length) %>% tibble(AC=.) %>%
+  ggplot(aes(x=AC)) +
+  geom_histogram(fill="springgreen2", binwidth = 1) +
+  ggtitle("Number of Alternate Alleles") +
+  xlab("Alternative alleles") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(1,6,1))
+```
+
+Overall this looks like little filtering is needed.  But let's do a little.
+
+```{r}
+vcf.filter <- vcf[rowRanges(vcf)$QUAL > 50 &
+                    sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
+                    info(vcf)$AN == 28] # require complete genotype info for now 
+length(vcf)
+length(vcf.filter)
+```
+
+Could do a VRanges object and convert to tibble:
+```{r}
+system.time(
+  vcf.filter.VR <- as(vcf.filter, "VRanges") 
+)
+```
+
+
+```{r}
+system.time(
+  VRtibble <- tibble(
+                 seqname=as.character(seqnames(vcf.filter.VR)),
+                 start=start(vcf.filter.VR),
+                 end=end(vcf.filter.VR),
+                 sample=as.character(sampleNames(vcf.filter.VR)),
+                 ref=ref(vcf.filter.VR),
+                 alt=alt(vcf.filter.VR),
+                 RD=refDepth(vcf.filter.VR),
+                 AD=altDepth(vcf.filter.VR),
+                 as.data.frame(mcols(vcf.filter.VR)[c("QUAL", "GT", "GQ", "PL", "ANN" )])
+                 ) %>%
+    mutate(snpID=str_c(seqname,start,sep=":"),
+           GT=str_replace(GT, stringr::fixed("|"), "/")) 
+) #35 seconds
+
+```
+
+reformat the snpEff annotation into tibble form
+```{r}
+annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+
+system.time(
+  VRtibble <- VRtibble %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4", "ANN5", "ANN6") ) %>%
+  pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) %>%
+  separate(ANN, into=annnames, sep = "\\|") %>%
+filter(impact != "MODIFIER")
+)
+
+head(VRtibble)
+```
+
+```{r}
+save(VRtibble, file=file.path(data.dir, "SnpEffFilteredTibble.Rdata"))
+```
+

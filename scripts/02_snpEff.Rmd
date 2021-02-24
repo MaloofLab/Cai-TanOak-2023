@@ -90,7 +90,11 @@ java -jar snpEff.jar dump   tanoak.v1  | head -n 40
 ```{bash, eval=FALSE}
 cd ~/git/TanOak/output
 
-time java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1 /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.vcf.gz > cohort.genotyped.snpEff.vcf
+time java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1 /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.vcf.gz > /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.snpEff.vcf
+
+gzip /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.snpEff.vcf
+
+ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.snpEff.vcf.gz ./
 
 ```
 

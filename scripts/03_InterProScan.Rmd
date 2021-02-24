@@ -21,3 +21,4 @@ file.copy("/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.all.mak
 R.utils::gzip("../input/PanGenome_ONT_pilon.all.maker.proteins.fasta")
 ```
 
+Then run on cluster, see `interproscan.slurm`

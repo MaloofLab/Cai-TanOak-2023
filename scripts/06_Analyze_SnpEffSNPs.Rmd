@@ -1,0 +1,152 @@
+---
+title: "Analyze SnpEffSnps"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+```
+
+```{r}
+load(file.path(datadir, "SnpEffFilteredTibble.Rdata"))
+```
+
+```{r}
+head(VRtibble, 200)
+```
+get the pheno data
+```{r}
+
+samples <- unique(VRtibble$sample)
+
+pheno <- read_csv("../input/TanOakResistance.csv") %>%
+  mutate(nameMatch=str_replace_all(Tanoak, "-","."),
+           nameMatch=str_replace(nameMatch, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) %>%
+  filter(nameMatch %in% samples) %>%
+  arrange(Rank_Sorting)
+  
+
+pheno
+
+```
+
+join them
+```{r}
+VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
+```
+
+```{r}
+system.time(
+  VRtibble <- VRtibble %>% dplyr::select(snpID, sample, GT, Tolerance_Resistance, effect, impact, GeneName, CDSpos_len) %>%
+    group_by(snpID) %>%
+    nest(data=c(sample, GT, Tolerance_Resistance))
+) #16 seconds
+head(VRtibble)
+```
+
+```{r}
+fisherp <- function(data){ #get p value from fisher test
+  if(length(unique(data$GT))==1) 
+    return(NA) 
+  tb <- table(data$GT, data$Tolerance_Resistance)
+  fisher.test(tb) %>%
+    magrittr::extract("p.value") %>% 
+    unlist() %>%
+    return()
+}
+```
+
+```{r}
+data <- VRtibble$data[[1]]
+```
+
+
+```{r}
+system.time(
+test <- VRtibble %>%
+  mutate(fisher=map_dbl(data, fisherp))
+) # 227 seconds
+test %>% arrange(fisher) %>% head(200)
+```
+
+```{r}
+gene_summary <- test %>%
+  group_by(GeneName) %>%
+  summarize(min.p=min(fisher), avg.p=mean(fisher), snps=n()) %>%
+  arrange(min.p, avg.p, desc(snps))
+```
+
+
+```{r}
+gene_summary
+```
+
+## get blast
+
+```{r}
+header <- c("query",
+            "subject",
+            "percentID",
+            "length",
+            "mismatch",
+            "gapopen",
+            "qstart",
+            "qend",
+            "sstart",
+            "send",
+            "evalue",
+            "bitscore"
+)
+
+blast <- read_csv("../output/TanOakVsA.t.blast_out.csv", col_names = header)
+
+head(blast)
+```
+
+```{r}
+blast.best <- blast %>% group_by(query) %>%
+  filter(row_number(desc(bitscore))==1)
+head(blast.best)
+```
+
+get annotation.  Download from https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20201231
+
+```{r}
+atDesc <- read_tsv("../input/Araport11_functional_descriptions_20201231.txt.gz") %>%
+  mutate(name = str_remove(name, "\\..*$")) %>%
+  rename_all(funs(str_c("At_", .))) %>%
+    filter(!duplicated(At_name)) %>% #not ideal
+  select(-At_gene_model_type)
+atDesc
+```
+
+```{r}
+atSymbol <- read_tsv("../input/gene_aliases_20201231.txt.gz") %>%
+    rename_all(funs(str_c("At_", .))) %>%
+  filter(!duplicated(At_name)) #not ideal
+atSymbol
+```
+
+```{r}
+blast.best <- blast.best %>%
+  mutate(AGI = str_remove(subject, "\\..*$")) %>%
+  left_join(atSymbol, by = c("AGI" = "At_name")) %>%
+  left_join(atDesc, by = c("AGI" = "At_name"))
+```
+
+```{r}
+gene_summary_ann <- blast.best %>% select(query, subject, percentID, length, starts_with("At_")) %>%
+  mutate(query=str_remove(query, "-mRNA-.*")) %>%
+  right_join(gene_summary, by= c("query" = "GeneName")) %>%
+  select(min.p, avg.p, snps, query, everything())
+
+gene_summary_ann    %>% arrange(round(min.p,3), avg.p, desc(snps))      
+```
+
+```{r}
+write_csv(gene_summary_ann, file="../output/Annotated_SNPeff_Summary.csv")
+write_csv(gene_summary_ann, file=file.path(datadir, "Annotated_SNPeff_Summary.csv"))
+
+```
+
