@@ -23,13 +23,20 @@ samples <- unique(VRtibble$sample)
 pheno <- read_csv("../input/TanOakResistance.csv") %>%
   mutate(nameMatch=str_replace_all(Tanoak, "-","."),
            nameMatch=str_replace(nameMatch, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) %>%
-  filter(nameMatch %in% samples) %>%
   arrange(Rank_Sorting)
   
 
 pheno
 
 ```
+
+missing 
+```{r}
+pheno.samples <- pheno %>% pull(nameMatch) %>% unique()
+
+samples[! samples %in% pheno.samples]
+```
+
 
 join them
 ```{r}
