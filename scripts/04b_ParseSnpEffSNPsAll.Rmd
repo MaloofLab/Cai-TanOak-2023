@@ -1,0 +1,358 @@
+---
+title: "04 parse snpEff vcf"
+output: html_notebook
+---
+
+This is a modified version of script 04_ParseSnpeEfSNPs and 06_Analyze_SnpEffSNPs.  While the other version filters SNPs just to retain those of moderate and high effect, here we will keep all (After filtering for quality, etc).  Will then run fisher test and annotate
+
+# setup
+
+```{r}
+library(tidyverse)
+library(VariantAnnotation)
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+```
+
+```{r}
+dir(datadir)
+```
+
+## get blast info
+
+```{r}
+header <- c("query",
+            "subject",
+            "percentID",
+            "length",
+            "mismatch",
+            "gapopen",
+            "qstart",
+            "qend",
+            "sstart",
+            "send",
+            "evalue",
+            "bitscore"
+)
+
+blast <- read_csv("../output/TanOakVsA.t.blast_out.csv", col_names = header)
+
+head(blast)
+```
+
+```{r}
+blast.best <- blast %>% group_by(query) %>%
+  filter(row_number(dplyr::desc(bitscore))==1) %>%
+head(blast.best)
+```
+
+get annotation.  Download from https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20201231
+
+```{r}
+atDesc <- read_tsv("../input/Araport11_functional_descriptions_20201231.txt.gz") %>%
+  mutate(name = str_remove(name, "\\..*$")) %>%
+  rename_all(funs(str_c("At_", .))) %>%
+  filter(!duplicated(At_name)) %>% #not ideal
+  dplyr::select(-At_gene_model_type)
+atDesc
+```
+
+```{r}
+atSymbol <- read_tsv("../input/gene_aliases_20201231.txt.gz") %>%
+  rename_all(funs(str_c("At_", .))) %>%
+  filter(!duplicated(At_name)) #not ideal
+atSymbol
+```
+
+```{r}
+blast.best <- blast.best %>%
+  mutate(AGI = str_remove(subject, "\\..*$")) %>%
+  left_join(atSymbol, by = c("AGI" = "At_name")) %>%
+  left_join(atDesc, by = c("AGI" = "At_name")) %>%
+    dplyr::select(query, subject, percentID, length, starts_with("At_")) %>%
+    mutate(query=str_remove(query, "-mRNA-.*"))
+```
+
+## make contig lengths file 
+
+```{r}
+contig.lengths <-
+  system("bcftools view -h '/Volumes/GoogleDrive/Shared drives/TanOak/cohort.genotyped.snpEff.vcf.gz' | grep contig", inter=TRUE) %>%
+  as_tibble() %>%
+  mutate(value=str_remove_all(value, "(##contig=<ID=)|(length=)|>")) %>%
+  separate(value, into = c("name", "length"), sep=",", convert = TRUE )
+head(contig.lengths,20)
+```
+## get pheno data
+
+```{r}
+pheno <- read_csv("../input/TanOakResistance.csv") %>%
+  mutate(nameMatch=str_replace_all(Tanoak, "-","."),
+         nameMatch=str_replace(nameMatch, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) %>%
+  arrange(Rank_Sorting)
+
+pheno
+```
+## fisher p function
+
+```{r}
+fisherp <- function(data){ #get p value from fisher test
+  if(length(unique(data$GT))==1) 
+    return(NA) 
+  tb <- table(data$GT, data$Tolerance_Resistance)
+  fisher.test(tb) %>%
+    magrittr::extract("p.value") %>% 
+    unlist() %>%
+    return()
+}
+```
+
+# take a look at a single contig
+
+convert and index, only needs to be done once
+```{bash, eval=FALSE}
+cd "/Volumes/GoogleDrive/Shared drives/TanOak"
+
+bcftools convert --output-type z cohort.genotyped.snpEff.vcf.gz > cohort.genotyped.snpEff.vcf.bgz
+
+tabix cohort.genotyped.snpEff.vcf.bgz
+```
+
+
+load it
+```{r}
+tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.vcf.bgz"))
+
+vcf <-  readVcf(tab, 
+                param=GRanges(
+                  seqnames = contig.lengths$name[180],
+                  ranges = IRanges(
+                    start = 1,
+                    end=contig.lengths$length[180])))
+```
+
+### quality
+```{r}
+tibble(QUAL=rowRanges(vcf)$QUAL) %>% 
+  ggplot(aes(x=QUAL)) +
+  geom_histogram(fill="skyblue") +
+  scale_x_log10() +
+  ggtitle("Quality") +
+  xlab("QUAL") +
+  ylab("Count")
+min(rowRanges(vcf)$QUAL)
+```
+
+### Genotyped allele number
+This is the number of allele genotype calls made.  With 14 samples, the max here is 28
+```{r}
+info(vcf)$AN %>% tibble(AN=.) %>%
+  ggplot(aes(x=AN)) +
+  geom_histogram(fill="red", binwidth = 1) +
+  ggtitle("Number of Alleles Called") +
+  xlab("Allele Number (AN)") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(2,28,2))
+```
+
+### Number of alternative alleles
+"1" means a b
+```{r}
+sapply(info(vcf)$AC, length) %>% tibble(AC=.) %>%
+  ggplot(aes(x=AC)) +
+  geom_histogram(fill="springgreen2", binwidth = 1) +
+  ggtitle("Number of Alternate Alleles") +
+  xlab("Alternative alleles") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(1,6,1))
+```
+
+Overall this looks like little filtering is needed.  But let's do a little.
+
+```{r}
+length(vcf)
+
+vcf <- vcf[rowRanges(vcf)$QUAL > 50 &
+             sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
+             info(vcf)$AN == 28] # require complete genotype info for now 
+length(vcf)
+```
+
+Could do a VRanges object and convert to tibble:
+```{r}
+system.time(
+  vcf.filter.VR <- as(vcf, "VRanges") 
+)
+rm(vcf)
+gc()
+```
+
+
+```{r}
+system.time(
+  VRtibble <- tibble(
+    seqname=as.character(seqnames(vcf.filter.VR)),
+    start=start(vcf.filter.VR),
+    end=end(vcf.filter.VR),
+    sample=as.character(sampleNames(vcf.filter.VR)),
+    ref=ref(vcf.filter.VR),
+    alt=alt(vcf.filter.VR),
+    RD=refDepth(vcf.filter.VR),
+    AD=altDepth(vcf.filter.VR),
+    as.data.frame(mcols(vcf.filter.VR)[c("QUAL", "GT", "GQ", "PL", "ANN" )])
+  ) %>%
+    mutate(snpID=str_c(seqname,start,sep=":"),
+           GT=str_replace(GT, stringr::fixed("|"), "/")) 
+) #12 seconds
+
+rm(vcf.filter.VR)
+gc()
+```
+
+reformat the snpEff annotation into tibble form
+```{r}
+annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+
+system.time(VRtibble <- VRtibble %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4"), extra="drop", fill="right" ))
+#711 seconds
+
+system.time(VRtibble <- VRtibble %>%
+              pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) )
+# 4 seconds
+
+system.time(VRtibble <- VRtibble %>%  separate(ANN, into=annnames, sep = "\\|") ) #171 seconds
+```
+
+filter to remove redundant entries
+```{r}
+system.time(VRtibble <- VRtibble %>% # only keep one entry per SNP.  keep the one with the most impact.
+              mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
+              group_by(sample) %>% 
+              arrange(impact) %>%
+              filter(!duplicated(snpID)) %>%
+              arrange(start)
+) # 27 seconds
+```
+
+join with pheno
+```{r}
+VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
+```
+
+## calculate fisher p value
+```{r}
+VRtibble <- VRtibble %>% dplyr::select(snpID, sample, GT, Tolerance_Resistance, effect, impact, GeneName, CDSpos_len) %>%
+  group_by(snpID) %>%
+  nest(data=c(sample, GT, Tolerance_Resistance))
+
+head(VRtibble)
+```
+
+```{r}
+VRtibble <- VRtibble %>%
+  mutate(fisher=map_dbl(data, fisherp))
+
+VRtibble %>% arrange(fisher) %>% head(200)
+```
+
+## Add blast annotation
+
+```{r}
+VRtibble <- VRtibble %>% dplyr::select(-data)
+
+ VRtibble <- VRtibble %>% 
+    left_join(blast.best, by= c("GeneName" = "query")) %>%
+    dplyr::select(seqname, start, end, ref, alt, fisher.p=fisher, GeneName=query, everything())
+
+head(VRtibble)
+```
+
+
+# Do it for all contigs.  
+I need to loop through the contigs, not enough memory to do this all at once.
+
+```{r, warning=FALSE}
+tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.vcf.bgz"))
+
+tab_seqnames <- seqnamesTabix(tab)
+
+contig.lengths_tab <- contig.lengths %>%
+  filter(name %in% tab_seqnames)
+
+if(file.exists("/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv")) file.remove(file="/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv")
+
+for(i in 1:nrow(contig.lengths_tab)) {
+    if( (i %% 100) == 0) print(str_c(Sys.time(), " ", i))
+  
+  # read it
+  vcf <-  readVcf(tab, 
+                  param=GRanges(
+                    seqnames = contig.lengths$name[i],
+                    ranges = IRanges(
+                      start = 1,
+                      end=contig.lengths$length[i])))
+  
+  # filter it
+  vcf <- vcf[rowRanges(vcf)$QUAL > 50 &
+               sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
+               info(vcf)$AN == 28] # require complete genotype info for now 
+  
+  if(nrow(vcf)==0) next()
+  
+  # convert to tibble
+  vcf.filter.VR <- as(vcf, "VRanges") 
+  VRtibble <- tibble(
+    seqname=as.character(seqnames(vcf.filter.VR)),
+    start=start(vcf.filter.VR),
+    end=end(vcf.filter.VR),
+    sample=as.character(sampleNames(vcf.filter.VR)),
+    ref=ref(vcf.filter.VR),
+    alt=alt(vcf.filter.VR),
+    RD=refDepth(vcf.filter.VR),
+    AD=altDepth(vcf.filter.VR),
+    as.data.frame(mcols(vcf.filter.VR)[c("QUAL", "GT", "GQ", "PL", "ANN" )])
+  ) %>%
+    mutate(snpID=str_c(seqname,start,sep=":"),
+           GT=str_replace(GT, stringr::fixed("|"), "/")) 
+  
+  rm(vcf, vcf.filter.VR)
+  gc()
+  
+  # reformat snpEff annotation
+  annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+  
+  VRtibble <- VRtibble %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4"), extra="drop", fill="right" )
+  
+  VRtibble <- VRtibble %>%
+    pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) 
+  
+  VRtibble <- VRtibble %>%  separate(ANN, into=annnames, sep = "\\|") 
+  
+  # filter to remove redundant entries
+  VRtibble <- VRtibble %>% # only keep one entry per SNP.  keep the one with the most impact.
+    mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
+    group_by(sample) %>% 
+    arrange(impact) %>%
+    filter(!duplicated(snpID)) %>%
+    arrange(start)
+  
+  
+  #join with pheno data
+  VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
+  VRtibble <- VRtibble %>% dplyr::select(snpID, seqname, start, end, ref, alt, sample, GT, Tolerance_Resistance, effect, impact, GeneName, CDSpos_len) %>%
+    group_by(snpID) %>%
+    nest(data=c(sample, GT, Tolerance_Resistance))
+  
+  # calculate fisher p value
+  VRtibble <- VRtibble %>%
+    mutate(fisher=map_dbl(data, fisherp)) %>% 
+    dplyr::select(-data)
+  
+  # add blast annotation
+  VRtibble <- VRtibble %>% 
+    left_join(blast.best, by= c("GeneName" = "query")) %>%
+    dplyr::select(seqname, start, end, ref, alt, fisher.p=fisher, GeneName, everything())
+  
+  # write it
+  write_csv(VRtibble, file="/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv", append = TRUE)
+}
+```
