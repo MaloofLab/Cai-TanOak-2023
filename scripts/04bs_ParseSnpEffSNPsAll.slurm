@@ -19,7 +19,7 @@ start=`date +%s`
 
 module load R/4.1.0
 
-cd /share/malooflab/Julin/git/Tanoak/scripts
+cd /share/malooflab/Julin/git/TanOak/scripts
 
 # Identify each array run
 

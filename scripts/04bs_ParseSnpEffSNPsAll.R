@@ -7,8 +7,8 @@
 
 # setup
 
-library(tidyverse)
-library(VariantAnnotation)
+library(tidyverse, lib.loc="/afs/genomecenter.ucdavis.edu/home/jmaloof/R/x86_64-pc-linux-gnu-library/4.1")
+library(VariantAnnotation, lib.loc="/afs/genomecenter.ucdavis.edu/home/jmaloof/R/x86_64-pc-linux-gnu-library/4.1")
 
 datadir <- "../input/"
 outdir <- "../output/"
