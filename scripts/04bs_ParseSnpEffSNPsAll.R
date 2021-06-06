@@ -10,7 +10,7 @@
 library(tidyverse)
 library(VariantAnnotation)
 
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/"
+datadir <- "../output/"
 outdir <- "../output/"
 
 first <- commandArgs(trailingOnly = TRUE)[1]
