@@ -10,6 +10,7 @@ This is a modified version of script 04_ParseSnpeEfSNPs and 06_Analyze_SnpEffSNP
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
+library(progress)
 datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
 ```
 
@@ -41,7 +42,7 @@ head(blast)
 
 ```{r}
 blast.best <- blast %>% group_by(query) %>%
-  filter(row_number(dplyr::desc(bitscore))==1) %>%
+  filter(row_number(dplyr::desc(bitscore))==1)
 head(blast.best)
 ```
 
@@ -208,39 +209,16 @@ rm(vcf.filter.VR)
 gc()
 ```
 
-reformat the snpEff annotation into tibble form
-```{r}
-annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
-
-system.time(VRtibble <- VRtibble %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4"), extra="drop", fill="right" ))
-#711 seconds
-
-system.time(VRtibble <- VRtibble %>%
-              pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) )
-# 4 seconds
-
-system.time(VRtibble <- VRtibble %>%  separate(ANN, into=annnames, sep = "\\|") ) #171 seconds
-```
-
-filter to remove redundant entries
-```{r}
-system.time(VRtibble <- VRtibble %>% # only keep one entry per SNP.  keep the one with the most impact.
-              mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
-              group_by(sample) %>% 
-              arrange(impact) %>%
-              filter(!duplicated(snpID)) %>%
-              arrange(start)
-) # 27 seconds
-```
 
 join with pheno
 ```{r}
 VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
+VRtibble %>% arrange(seqname, start) %>% head(100)
 ```
 
 ## calculate fisher p value
 ```{r}
-VRtibble <- VRtibble %>% dplyr::select(snpID, sample, GT, Tolerance_Resistance, effect, impact, GeneName, CDSpos_len) %>%
+VRtibble <- VRtibble %>% dplyr::select(seqname, start, end, snpID, sample, ref, alt, GT, Tolerance_Resistance, ANN) %>%
   group_by(snpID) %>%
   nest(data=c(sample, GT, Tolerance_Resistance))
 
@@ -249,10 +227,40 @@ head(VRtibble)
 
 ```{r}
 VRtibble <- VRtibble %>%
-  mutate(fisher=map_dbl(data, fisherp))
+  mutate(fisher=map_dbl(data, fisherp)) %>%
+  select(-data)
 
 VRtibble %>% arrange(fisher) %>% head(200)
 ```
+
+## reformat the snpEff annotation into tibble form
+
+
+```{r}
+annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+
+system.time(VRtibbletest <- VRtibble %>% ungroup() %>% hoist(ANN, ANN1=1, ANN2=2, ANN3=3, ANN4=4)) # 30 seconds for contig180
+
+system.time(VRtibbletest <- VRtibbletest %>%
+              pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) )
+# .1 seconds
+
+system.time(VRtibbletest <- VRtibbletest %>%  separate(ANN, into=annnames, sep = "\\|") ) #12 seconds for contig180
+```
+
+
+filter to remove redundant entries
+```{r}
+system.time(  VRtibble <- VRtibble %>% # only keep one entry per SNP.  keep the one with the most impact.
+    group_by(snpID) %>%
+    mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
+    arrange(impact) %>%
+    filter(!duplicated(snpID)) %>%
+    arrange(start) %>% select(seqname:fisher, effect, GeneName, cDNApos_len, distance )
+) # 27 seconds
+```
+
+
 
 ## Add blast annotation
 
@@ -278,18 +286,25 @@ tab_seqnames <- seqnamesTabix(tab)
 contig.lengths_tab <- contig.lengths %>%
   filter(name %in% tab_seqnames)
 
-if(file.exists("/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv")) file.remove(file="/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv")
+if(file.exists("../output/Annotated_SNPeff_ALL.csv.gz")) file.remove(file="../output/Annotated_SNPeff_ALL.csv.gz")
+
+pb <- progress_bar$new(total = nrow(contig.lengths_tab),
+                       format = "[:bar] :current :percent :elapsedfull")
 
 for(i in 1:nrow(contig.lengths_tab)) {
-    if( (i %% 100) == 0) print(str_c(Sys.time(), " ", i))
+  pb$tick()
   
   # read it
-  vcf <-  readVcf(tab, 
+  vcf <-  try(
+    readVcf(tab, 
                   param=GRanges(
                     seqnames = contig.lengths$name[i],
                     ranges = IRanges(
                       start = 1,
                       end=contig.lengths$length[i])))
+  )
+  
+  if(class(vcf)=="try-error") next() #some small contigs aren't in vcf and throw an error.
   
   # filter it
   vcf <- vcf[rowRanges(vcf)$QUAL > 50 &
@@ -317,28 +332,10 @@ for(i in 1:nrow(contig.lengths_tab)) {
   rm(vcf, vcf.filter.VR)
   gc()
   
-  # reformat snpEff annotation
-  annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
-  
-  VRtibble <- VRtibble %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4"), extra="drop", fill="right" )
-  
-  VRtibble <- VRtibble %>%
-    pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) 
-  
-  VRtibble <- VRtibble %>%  separate(ANN, into=annnames, sep = "\\|") 
-  
-  # filter to remove redundant entries
-  VRtibble <- VRtibble %>% # only keep one entry per SNP.  keep the one with the most impact.
-    mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
-    group_by(sample) %>% 
-    arrange(impact) %>%
-    filter(!duplicated(snpID)) %>%
-    arrange(start)
-  
   
   #join with pheno data
   VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
-  VRtibble <- VRtibble %>% dplyr::select(snpID, seqname, start, end, ref, alt, sample, GT, Tolerance_Resistance, effect, impact, GeneName, CDSpos_len) %>%
+  VRtibble <- VRtibble %>% dplyr::select(seqname, start, end, snpID, sample, ref, alt, GT, Tolerance_Resistance, ANN) %>%
     group_by(snpID) %>%
     nest(data=c(sample, GT, Tolerance_Resistance))
   
@@ -347,12 +344,37 @@ for(i in 1:nrow(contig.lengths_tab)) {
     mutate(fisher=map_dbl(data, fisherp)) %>% 
     dplyr::select(-data)
   
+   # reformat snpEff annotation
+  annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+  
+  VRtibble <- VRtibble %>% ungroup() %>% 
+    hoist(ANN, ANN1=1, ANN2=2, ANN3=3, ANN4=4, .remove = FALSE) %>% # ANN not always removed even if TRUE, perhaps if it has more than 5 components
+    select(-ANN) 
+
+  VRtibble <- VRtibble %>%
+    pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) 
+  
+  VRtibble <- VRtibble %>%  separate(ANN, into=annnames, sep = "\\|") 
+  
+  # filter to remove redundant entries
+  VRtibble <- VRtibble %>% # only keep one entry per SNP.  keep the one with the most impact.
+    group_by(snpID) %>%
+    mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
+    arrange(impact) %>%
+    filter(!duplicated(snpID)) %>%
+    arrange(start) %>% select(seqname:fisher, effect, GeneName, cDNApos_len, distance )
+  
   # add blast annotation
   VRtibble <- VRtibble %>% 
     left_join(blast.best, by= c("GeneName" = "query")) %>%
     dplyr::select(seqname, start, end, ref, alt, fisher.p=fisher, GeneName, everything())
   
   # write it
-  write_csv(VRtibble, file="/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv", append = TRUE)
+  write_csv(VRtibble, file="../output/Annotated_SNPeff_ALL.csv.gz", append = TRUE)
 }
+
+file.rename("../output/Annotated_SNPeff_ALL.csv.gz", "/Volumes/GoogleDrive/Shared drives/TanOak/Annotated_SNPeff_ALL.csv.gz")
+
 ```
+
+
