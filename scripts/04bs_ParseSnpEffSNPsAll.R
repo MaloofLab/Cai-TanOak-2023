@@ -10,7 +10,7 @@
 library(tidyverse)
 library(VariantAnnotation)
 
-datadir <- "../output/"
+datadir <- "../input/"
 outdir <- "../output/"
 
 first <- commandArgs(trailingOnly = TRUE)[1]
