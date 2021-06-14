@@ -18,6 +18,8 @@ outdir <- "../output/"
 first <- commandArgs(trailingOnly = TRUE)[1]
 last <- commandArgs(trailingOnly = TRUE)[2]
 
+cat("first: ", first, " last: ", last, "\n")
+
 tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.vcf.bgz"))
 
 tab_seqnames <- seqnamesTabix(tab)
