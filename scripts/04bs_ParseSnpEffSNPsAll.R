@@ -1,6 +1,6 @@
 # This is a modified version of script 04_ParseSnpeEfSNPs and 06_Analyze_SnpEffSNPs.  
 # While the other version filters SNPs just to retain those of moderate and high effect, 
-# here we will keep all (After filtering for quality, etc).  Will then run fisher test and 
+# here we will keep all (After filtering for quality, etc).  Will then run fisher test and anova tests
 # annotate
 
 # This is modified to be run as a script on Barbera
@@ -32,7 +32,7 @@ contig.lengths_tab <- contig.lengths %>%
 
 if(last > nrow(contig.lengths_tab)) last <- nrow(contig.lengths_tab)
 
-outfile <- str_c("Annotated_SNPeff_ALL", first, last,".csv.gz", sep="_")
+outfile <- str_c("Annotated_SNPeff_ALL_quant", first, last,".csv.gz", sep="_")
 
 if(file.exists(file.path(outdir, outfile))) file.remove(file=file.path(outdir,outfile))
 
@@ -91,6 +91,28 @@ fisherp <- function(data){ #get p value from fisher test
     return()
 }
 
+## kendall p function
+
+kendallp <- function(data) { # get p value from kendall ranked correlation test
+  if(length(unique(data$GT))==1) 
+    return(NA) 
+  cor.test(as.numeric(as.factor(data$GT)), 
+           data$Rank_Sorting, 
+           method = "kendall",
+           exact=FALSE)$p.value
+  }
+
+## anova p function
+anovap <- function(data){ #get p value from anova test
+  if(length(unique(data$GT))==1) 
+    return(NA) 
+  aov(Rank_Sorting ~ GT, data=data) %>% 
+    summary()%>%
+    magrittr::extract2(1) %>%
+    magrittr::extract(1, "Pr(>F)") %>%
+    return()
+}
+
 ## loop through the contigs
 
 for(i in first:last) {
@@ -136,13 +158,15 @@ for(i in first:last) {
   
   #join with pheno data
   VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
-  VRtibble <- VRtibble %>% dplyr::select(seqname, start, end, snpID, sample, ref, alt, GT, Tolerance_Resistance, ANN) %>%
+  VRtibble <- VRtibble %>% dplyr::select(seqname, start, end, snpID, sample, ref, alt, GT, Tolerance_Resistance, Rank_Sorting, ANN) %>%
     group_by(snpID) %>%
-    nest(data=c(sample, GT, Tolerance_Resistance))
+    nest(data=c(sample, GT, Tolerance_Resistance, Rank_Sorting))
   
   # calculate fisher p value
   VRtibble <- VRtibble %>%
-    mutate(fisher=map_dbl(data, fisherp)) %>% 
+    mutate(fisher.p=map_dbl(data, fisherp),
+          # anova.p=map_dbl(data, anovap),
+           kendall.p=map_dbl(data, kendallp)) %>% 
     dplyr::select(-data)
   
    # reformat snpEff annotation
@@ -163,12 +187,12 @@ for(i in first:last) {
     mutate(impact=factor(impact, levels = c("HIGH", "MODERATE", "LOW", "MODIFIER"))) %>%
     arrange(impact) %>%
     filter(!duplicated(snpID)) %>%
-    arrange(start) %>% dplyr::select(seqname:fisher, effect, GeneName, cDNApos_len, distance )
+    arrange(start) %>% dplyr::select(seqname:kendall.p, effect, GeneName, cDNApos_len, distance )
   
   # add blast annotation
   VRtibble <- VRtibble %>% 
     left_join(blast.best, by= c("GeneName" = "query")) %>%
-    dplyr::select(seqname, start, end, ref, alt, fisher.p=fisher, GeneName, everything())
+    dplyr::select(seqname, start, end, ref, alt, fisher.p:kendall.p, GeneName, everything())
   
   # write it
   write_csv(VRtibble, file=file.path(outdir, outfile), append = TRUE)
