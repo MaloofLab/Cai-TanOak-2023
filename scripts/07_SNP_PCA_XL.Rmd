@@ -5,17 +5,18 @@ output: html_notebook
 
 Will make a PCA plot of SNPs, colored by phenotype.
 
-In this version, sample 9 times to test whether we are sampling enough SNPs.
+In this version include XL assemblies
 
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/"
+library(ggrepel)
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/vcf_with_xl/"
 outdir <- "../output/"
 ```
 
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.vcf.bgz"))
+tab <- TabixFile(file.path(datadir, "cohort.XL.genotyped.vcf.gz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
@@ -53,7 +54,7 @@ getPCs <- function(trial) {
   # filter it
   vcf <- vcf[rowRanges(vcf)$QUAL > 50 &
                sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
-               info(vcf)$AN == 28] # require complete genotype info for now 
+               info(vcf)$AN == 38] # require complete genotype info for now 
   
   mat <- genotypeToSnpMatrix(vcf)
   mat3 <- as(mat$genotypes, "numeric")
@@ -95,8 +96,9 @@ contig.lengths_tab <- contig.lengths_tab %>% arrange(desc(length)) %>%
 
 contig.lengths_tab
 ```
+
 ```{r}
-results <- tibble(trial=1:9)
+results <- tibble(trial=1:4)
 ```
 
 
@@ -114,24 +116,30 @@ results %>% dplyr::select(trial, pctvar) %>%
   unnest(pctvar) %>%
   ggplot(aes(x=PC, y=pctvar, fill=as.character(trial))) +
   geom_col(position = "dodge")
-ggsave("../output/PCA_pctvar_length_100000000.pdf")
+ggsave("../output/XL_PCA_pctvar_length_100000000.pdf")
 ```
 
 ```{r, fig.asp=1, fig.height=10}
 results %>% dplyr::select(trial, PCtibble) %>% 
   unnest(PCtibble) %>%
   ggplot(aes(x=PC1, y=PC2, color=Tolerance_Resistance, label=sampleID)) +
-  geom_text(size=3) +
+  geom_text_repel(size=3) + 
+  geom_point() +
   facet_wrap(~ trial, scales = "free") +
   theme(legend.position = "top")
-ggsave("../output/PCA_length_100000000.pdf")
+ggsave("../output/XL_PCA_length_100000000.pdf")
 ```
 
 
-```{r}
-PCs %>%
+```{r, fig.asp=1, fig.height=10}
+results %>% dplyr::select(trial, PCtibble) %>% 
+  unnest(PCtibble) %>%
+  filter(trial==3) %>%
   ggplot(aes(x=PC1, y=PC2, color=Tolerance_Resistance, label=sampleID)) +
-  geom_text() 
+  geom_text_repel(size=3) + 
+  geom_point() +
+  theme(legend.position = "top")
+ggsave("../output/XL_PCA_length_100000000_single.pdf")
 ```
 
 
