@@ -89,7 +89,7 @@ head(tanoak_v_oak_blastp, 100)
 
 
 ```{r}
-# filter for best hits
+# find best hits in both directions
 
 tanoak_v_oak_blastp_best <- tanoak_v_oak_blastp %>%
   arrange(query_id, E, desc(Score)) %>%
@@ -106,18 +106,124 @@ head(oak_v_tanoak_blastp_best)
 ```
 
 ```{r}
-blastp_recip <- left_join(tanoak_v_oak_blastp_best, oak_v_tanoak_blastp_best,
+# joining both tables together
+tanoak_blastp_recip <- left_join(tanoak_v_oak_blastp_best, oak_v_tanoak_blastp_best,
                               by=c("subject_id"="query_id"),
                               suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
   select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
 
-head(blastp_recip,10)
+head(tanoak_blastp_recip,10)
+dim(tanoak_blastp_recip)
+```
+
+```{r}
+# filter best reciprocal hits
+tanoak_blastp_ortho <- tanoak_blastp_recip %>%
+  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-04, E_diff.tanoak_oak < -2)
+
+# gut check
+head(tanoak_blastp_ortho)
+dim(tanoak_blastp_ortho)
 ```
 
 
 
 
 
+
+### dc megablast results
+
+```{r}
+# loading in data
+
+tanoak_v_oak_dcmega <- read_csv("../output/Tanoak_to_Oak_dc-megablast.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+oak_v_tanoak_dcmega <- read_csv("../output/Oak_to_Tanoak_dc-megablast.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+```
+
+```{r}
+# find the difference of the order of magnitude in E value between hits
+
+tanoak_v_oak_dcmega <- tanoak_v_oak_dcmega %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+oak_v_tanoak_dcmega <- oak_v_tanoak_dcmega %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+tanoak_v_oak_dcmega <- tanoak_v_oak_dcmega %>% mutate(E_diff=log10(E)-log10(nextE))
+oak_v_tanoak_dcmega <- oak_v_tanoak_dcmega %>% mutate(E_diff=log10(E)-log10(nextE))
+
+head(tanoak_v_oak_dcmega, 100)
+```
+
+```{r}
+# find best hits in both directions
+
+tanoak_v_oak_dcmega_best <- tanoak_v_oak_dcmega %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+oak_v_tanoak_dcmega_best <- oak_v_tanoak_dcmega %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+head(tanoak_v_oak_dcmega_best)
+head(oak_v_tanoak_dcmega_best)
+```
+
+```{r}
+# joining both tables together
+tanoak_dcmega_recip <- left_join(tanoak_v_oak_dcmega_best, oak_v_tanoak_dcmega_best,
+                              by=c("subject_id"="query_id"),
+                              suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
+  select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
+
+head(tanoak_dcmega_recip,10)
+dim(tanoak_dcmega_recip)
+```
+
+```{r}
+# filter best reciprocal hits
+tanoak_dcmega_ortho <- tanoak_dcmega_recip %>%
+  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-04, E_diff.tanoak_oak < -2)
+
+# gut check
+head(tanoak_dcmega_ortho)
+dim(tanoak_dcmega_ortho)
+```
 
 
 
