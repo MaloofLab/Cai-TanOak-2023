@@ -1,0 +1,143 @@
+---
+title: "Filter BLAST TanOak and Oak"
+author: "Paulo Magalang"
+date: "7/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Following https://malooflab.github.io/BIS180L_web_archive/2019/04/23/R-Practice-Blast/
+tutorial to join and filter reciprocal BLAST results.
+
+
+```{r packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+
+### blastp results
+
+```{r}
+# loading in data
+
+tanoak_v_oak_blastp <- read_csv("../output/Tanoak_to_Oak_blastp.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+oak_v_tanoak_blastp <- read_csv("../output/Oak_to_Tanoak_blastp.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+# take a look
+head(oak_v_tanoak_blastp, 15)
+# looks like there are two extra unknown columns but the other
+# values seem reasonable still. where to find blastp output format just in case?
+```
+
+```{r}
+# find the difference of the order of magnitude in E value between hits
+
+tanoak_v_oak_blastp <- tanoak_v_oak_blastp %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+tanoak_v_oak_blastp <- tanoak_v_oak_blastp %>% mutate(E_diff=log10(E)-log10(nextE))
+oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>% mutate(E_diff=log10(E)-log10(nextE))
+
+head(tanoak_v_oak_blastp, 100)
+```
+
+```{r}
+# hard to see any results with the entire dataset; messing around with a subset
+#tanoak_v_oak_blastp[1:1000, ] %>% 
+#  arrange(query_id, E) %>% 
+#  group_by(query_id) %>% 
+#  mutate(nextE = lead(E)) %>%
+#  ungroup()
+```
+
+
+```{r}
+# filter for best hits
+
+tanoak_v_oak_blastp_best <- tanoak_v_oak_blastp %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+oak_v_tanoak_blastp_best <- oak_v_tanoak_blastp %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+head(tanoak_v_oak_blastp_best)
+head(oak_v_tanoak_blastp_best)
+```
+
+```{r}
+blastp_recip <- left_join(tanoak_v_oak_blastp_best, oak_v_tanoak_blastp_best,
+                              by=c("subject_id"="query_id"),
+                              suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
+  select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
+
+head(blastp_recip,10)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
