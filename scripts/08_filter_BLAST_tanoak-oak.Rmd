@@ -9,12 +9,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 Following https://malooflab.github.io/BIS180L_web_archive/2019/04/23/R-Practice-Blast/
 tutorial to join and filter reciprocal BLAST results.
 
 
 ```{r packages, message=FALSE, warning=FALSE}
 library(tidyverse)
+library(Biostrings)
+library(stringr)
 ```
 
 
@@ -227,12 +230,65 @@ dim(tanoak_dcmega_ortho)
 
 
 
+### Export each ortholog pair into a fasta file
 
+```{r}
+# cleanup, delete everything except for ortholog pairs
+rm(list = setdiff(ls(), c("tanoak_blastp_ortho", "tanoak_dcmega_ortho")))
+gc()
+```
+```{r}
+getwd()
+```
 
+```{r}
+# load in fasta files
+tanoak_fasta <- readDNAStringSet("../input/blast/PanGenome_ONT_pilon.all.maker.transcripts.fasta")
+oak_fasta <- readDNAStringSet("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa")
 
+# put them into one object
+seqs <- c(tanoak_fasta, oak_fasta)
 
+# change names to match with query and subject ID
+names(seqs) <- names(seqs) %>% 
+  str_extract("[^ ]*") # take everything before the first space
+```
 
+```{r}
+# prep filenames
+tanoak_blastp_ortho <- tanoak_blastp_ortho %>%
+  select(query_id, subject_id) %>%
+  mutate(filepath = paste0("../output/ortho/blastp/", query_id, "--", subject_id, ".fasta"))
 
+tanoak_dcmega_ortho <- tanoak_dcmega_ortho %>%
+  select(query_id, subject_id) %>%
+  mutate(filepath = paste0("../output/ortho/dcmegablast/", query_id, "--", subject_id, ".fasta"))
+
+head(tanoak_blastp_ortho)
+```
+
+```{r}
+# for each row in the table,
+#   find the sequence data in seqs for query and subject IDs
+#   put DNAstrings into a DNAStringSet object
+#   export using the filename at the given index
+system.time(
+for (i in seq(1, 1000)) {
+  # get ID names
+  tanoak_id <- tanoak_blastp_ortho[i, ]$query_id
+  oak_id <- tanoak_blastp_ortho[i, ]$subject_id
+  path <- tanoak_blastp_ortho[i, ]$filepath
+  
+  # get sequence data
+  ids <- c(tanoak_id, oak_id)
+  ortho_pair <- seqs[ids]
+  
+  # export as a fasta file
+  writeXStringSet(x = ortho_pair, filepath = path)
+})
+
+# ~3.5 minutes to generate 1000 fasta files
+```
 
 
 
