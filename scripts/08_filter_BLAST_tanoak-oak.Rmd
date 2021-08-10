@@ -258,11 +258,11 @@ names(seqs) <- names(seqs) %>%
 # prep filenames
 tanoak_blastp_ortho <- tanoak_blastp_ortho %>%
   select(query_id, subject_id) %>%
-  mutate(filepath = paste0("../output/ortho/blastp/", query_id, "--", subject_id, ".fasta"))
+  mutate(filepath = paste0("../output/ortho/blastp/raw_seqs", query_id, "--", subject_id, ".fasta"))
 
 tanoak_dcmega_ortho <- tanoak_dcmega_ortho %>%
   select(query_id, subject_id) %>%
-  mutate(filepath = paste0("../output/ortho/dcmegablast/", query_id, "--", subject_id, ".fasta"))
+  mutate(filepath = paste0("../output/ortho/dcmegablast/raw_seqs", query_id, "--", subject_id, ".fasta"))
 
 head(tanoak_blastp_ortho)
 
@@ -321,6 +321,26 @@ for (i in seq(1001, 7638)) {
 # ~8 minutes to generate the rest
 ```
 
+```{r}
+# generate fasta files for dcmegablast
+
+system.time(
+for (i in seq(1, 5336)) {
+  # get ID names
+  tanoak_id <- tanoak_dcmega_ortho[i, ]$query_id
+  oak_id <- tanoak_dcmega_ortho[i, ]$subject_id
+  path <- tanoak_dcmega_ortho[i, ]$filepath
+  
+  # get sequence data
+  ids <- c(tanoak_id, oak_id)
+  ortho_pair <- seqs[ids]
+  
+  # export as a fasta file
+  writeXStringSet(x = ortho_pair, filepath = path)
+})
+
+# 6 mins to run
+```
 
 
 
