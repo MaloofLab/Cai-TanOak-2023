@@ -1,0 +1,100 @@
+---
+title: "Calculate dn/ds"
+author: "Paulo Magalang"
+date: "8/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# load in libraries
+library(tidyverse)
+library(Biostrings)
+library(ape)
+library(stringr)
+```
+
+```{r}
+getwd()
+```
+
+```{r}
+# testing
+files <- list.files("../output/ortho/blastp/aligned_seqs/nt") %>% head()
+filename <- paste0("../output/ortho/blastp/aligned_seqs/nt/", files[4])
+  
+#dna <- readDNAStringSet(filename, format="fasta")
+#dna
+
+dna <- read.dna(filename, format = "fasta")
+dna
+
+dnds <- dnds(dna, codonstart = 1, quiet = TRUE)
+```
+
+## blastp dn/ds calculations
+```{r}
+# for each output file, get the filepath, calculate dn/ds, save the value
+# what is the output going to look like? what would be useful/helpful?
+
+# file setup
+path_prefix <- "../output/ortho/blastp/aligned_seqs/nt/"
+
+files <- list.files(path_prefix)
+total <- list.files(path_prefix) %>% length()
+
+# initialize empty dataframe
+blastp_dnds <- data.frame(matrix(0, ncol = 3, nrow = total))
+colnames(blastp_dnds) <- c("tanoak", "oak", "dnds_ratio")
+
+for (i in 1:total) {
+  # get file path
+  filename <- paste0(path_prefix, files[i])
+  
+  # load in fasta file
+  alignment <- read.dna(filename, format = "fasta")
+  dnds_ratio <- NA
+  
+  if(!is.null(dim(alignment)) && (sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2])) { # check for unequal sequence lengths and unique sequences
+    # ! character from alignment software cannot be handled by ape when loading in fasta file, causing unequal
+    # sequence lengths, might have to convert those characters to '-' in all files
+    # although if two sequenes have the same number of !'s in alignment, can calculate dn/ds for some reason
+    
+    # calculate dn/ds
+    dnds_ratio <- dnds(alignment, quiet = TRUE)
+  }
+  
+  # get gene names
+  tanoak <- str_replace(files[i], "--.*", "")
+  oak <- str_replace(files[i], ".*--(.*).fasta.out_nt", "\\1")
+  
+  # add to dataframe
+  blastp_dnds[i, ] = c(tanoak, oak, dnds_ratio)
+}
+
+```
+
+```{r}
+# strange cases
+blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ] # large indels
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # check to see if sequences are of unequal length to validate or sequences are the same
+blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

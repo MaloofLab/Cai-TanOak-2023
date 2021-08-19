@@ -1,17 +1,13 @@
 ---
-title: "Filter BLAST TanOak and Oak"
+title: "Explore Filtering Results"
 author: "Paulo Magalang"
-date: "7/28/2021"
+date: "8/10/2021"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-
-Following https://malooflab.github.io/BIS180L_web_archive/2019/04/23/R-Practice-Blast/
-tutorial to join and filter reciprocal BLAST results.
 
 
 ```{r packages, message=FALSE, warning=FALSE}
@@ -55,7 +51,7 @@ oak_v_tanoak_blastp <- read_csv("../output/Oak_to_Tanoak_blastp.csv",
                                    "Score"))
 
 # take a look
-head(oak_v_tanoak_blastp, 15)
+#head(oak_v_tanoak_blastp, 15)
 # looks like there are two extra unknown columns but the other
 # values seem reasonable still. where to find blastp output format just in case?
 ```
@@ -78,18 +74,8 @@ oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>%
 tanoak_v_oak_blastp <- tanoak_v_oak_blastp %>% mutate(E_diff=log10(E)-log10(nextE))
 oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>% mutate(E_diff=log10(E)-log10(nextE))
 
-head(tanoak_v_oak_blastp, 100)
+#head(tanoak_v_oak_blastp, 100)
 ```
-
-```{r}
-# hard to see any results with the entire dataset; messing around with a subset
-#tanoak_v_oak_blastp[1:1000, ] %>% 
-#  arrange(query_id, E) %>% 
-#  group_by(query_id) %>% 
-#  mutate(nextE = lead(E)) %>%
-#  ungroup()
-```
-
 
 ```{r}
 # find best hits in both directions
@@ -104,8 +90,8 @@ oak_v_tanoak_blastp_best <- oak_v_tanoak_blastp %>%
   filter(!duplicated(query_id)) %>%
   select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
 
-head(tanoak_v_oak_blastp_best)
-head(oak_v_tanoak_blastp_best)
+#head(tanoak_v_oak_blastp_best)
+#head(oak_v_tanoak_blastp_best)
 ```
 
 ```{r}
@@ -115,26 +101,14 @@ tanoak_blastp_recip <- left_join(tanoak_v_oak_blastp_best, oak_v_tanoak_blastp_b
                               suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
   select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
 
-head(tanoak_blastp_recip,10)
-dim(tanoak_blastp_recip)
-```
-
-```{r}
-# filter best reciprocal hits
-tanoak_blastp_ortho <- tanoak_blastp_recip %>%
-  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-04, E_diff.tanoak_oak < -2)
-
-# gut check
-head(tanoak_blastp_ortho)
-dim(tanoak_blastp_ortho)
+#head(tanoak_blastp_recip,10)
+#dim(tanoak_blastp_recip)
 ```
 
 
 
 
-
-
-### dc megablast results
+### dc-megablast results 
 
 ```{r}
 # loading in data
@@ -187,7 +161,7 @@ oak_v_tanoak_dcmega <- oak_v_tanoak_dcmega %>%
 tanoak_v_oak_dcmega <- tanoak_v_oak_dcmega %>% mutate(E_diff=log10(E)-log10(nextE))
 oak_v_tanoak_dcmega <- oak_v_tanoak_dcmega %>% mutate(E_diff=log10(E)-log10(nextE))
 
-head(tanoak_v_oak_dcmega, 100)
+#head(tanoak_v_oak_dcmega, 100)
 ```
 
 ```{r}
@@ -203,8 +177,8 @@ oak_v_tanoak_dcmega_best <- oak_v_tanoak_dcmega %>%
   filter(!duplicated(query_id)) %>%
   select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
 
-head(tanoak_v_oak_dcmega_best)
-head(oak_v_tanoak_dcmega_best)
+#head(tanoak_v_oak_dcmega_best)
+#head(oak_v_tanoak_dcmega_best)
 ```
 
 ```{r}
@@ -214,143 +188,135 @@ tanoak_dcmega_recip <- left_join(tanoak_v_oak_dcmega_best, oak_v_tanoak_dcmega_b
                               suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
   select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
 
-head(tanoak_dcmega_recip,10)
-dim(tanoak_dcmega_recip)
-```
-
-```{r}
-# filter best reciprocal hits
-tanoak_dcmega_ortho <- tanoak_dcmega_recip %>%
-  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-04, E_diff.tanoak_oak < -2)
-
-# gut check
-head(tanoak_dcmega_ortho)
-dim(tanoak_dcmega_ortho)
+#head(tanoak_dcmega_recip,10)
+#dim(tanoak_dcmega_recip)
 ```
 
 
-
-
-
-
-
-### Export each ortholog pair into a fasta file
-
 ```{r}
-# cleanup, delete everything except for ortholog pairs
-rm(list = setdiff(ls(), c("tanoak_blastp_ortho", "tanoak_dcmega_ortho")))
+# cleanup
+rm(list = setdiff(ls(), c("tanoak_blastp_recip", "tanoak_dcmega_recip")))
 gc()
 ```
+
+### Generate data
+
+Filter for best reciprocal hits using differing E-value cutoffs. Record the number
+of hits in each parameter combo
+
 ```{r}
-getwd()
+# check hits that are actually getting thrown out
+
+# generally accepted values:
+# E_value = 1e-4
+# E_value diff = -2
+
+# params to test
+E_value <- c(10, 1e-2, 1e-5, 1e-6, 1e-10, 1e-50, 1e-100, 0)
+E_diff <- seq(0, -30, by = -2)
+
+
+### blastp results
+
+# summary stats for tanoak_blastp_recip
+# E.tanoak_oak
+#     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+#0.000e+00 0.000e+00 0.000e+00 1.817e-06 0.000e+00 1.000e-03
+#
+# E_diff.tanoak_oak
+#    Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+#    -Inf -128.927  -19.694     -Inf   -3.804    0.000    10799 
+
+# lots of NaNs and NAs, can convert NaNs to 0, not sure I can do the same thing to missing values
+# how to deal with -Inf? coming from taking a difference btwn log10(0) and log10(1e-{large #}), actually they shouldn't be
+# causing problems nvm
+tanoak_blastp_recip$E_diff.tanoak_oak[is.nan(tanoak_blastp_recip$E_diff.tanoak_oak)] <- 0
+
+blastp_filter <- matrix(0, length(E_value), length(E_diff))
+
+for (i in seq(1, length(E_value))) { # iterator for E_value
+  for (j in seq(1, length(E_diff))) { # iterator for E_diff
+    filter_result <- tanoak_blastp_recip %>%
+      filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < E_value[i], E_diff.tanoak_oak <= E_diff[j]) %>%
+      dim()
+    
+    blastp_filter[i, j] <- filter_result[1]
+    
+  }
+}
+
+# most relaxed parameters w/out reciprocity ~29k hits
+# most relaxed parameters w/ reciprocity ~10k hits
+
+blastp_filter <- blastp_filter %>% as_tibble()
+#rownames(blastp_filter) <- E_value
+colnames(blastp_filter) <- E_diff
+
+
+
+### dc megablast results
+
+dcmega_filter <- matrix(0, length(E_value), length(E_diff))
+
+for (i in seq(1, length(E_value))) { # iterator for E_value
+  for (j in seq(1, length(E_diff))) { # iterator for E_diff
+    filter_result <- tanoak_dcmega_recip %>%
+      filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < E_value[i], E_diff.tanoak_oak < E_diff[j]) %>%
+      dim()
+    
+    dcmega_filter[i, j] <- filter_result[1]
+    
+  }
+}
+
+dcmega_filter <- dcmega_filter %>% as_tibble()
+#rownames(dcmega_filter) <- E_value
+colnames(dcmega_filter) <- E_diff
+
+# columns are E value differences
+# rows are E value cutoffs (1: E_val = 10, 2: E_val = 1, etc)
+
+# E value cutoffs are not as impactful as filtering based off of differences in E values,
+# suggesting that majority reciprocal hits are significant or there's a bug (yes there's a bug)
+
+# maybe take log10 transform to filter E values based on order of magnitude, need to be careful of 
+# log10(0) case
+
+# Even then, the differences in the # of reciprocal hits between columns are not as dramatic
+# as we expect.
+
+blastp_filter
+dcmega_filter
 ```
 
 ```{r}
-# load in fasta files
-tanoak_fasta <- readDNAStringSet("../input/blast/PanGenome_ONT_pilon.all.maker.transcripts.fasta")
-oak_fasta <- readDNAStringSet("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa")
+# Might be helpful to see how many reciprocal hits there are without filtering
 
-# put them into one object
-seqs <- c(tanoak_fasta, oak_fasta)
+blastp_nofilter <- tanoak_blastp_recip %>%
+  filter(query_id == subject_id.oak_tanoak) #, E.tanoak_oak < 10) 
 
-# change names to match with query and subject ID
-names(seqs) <- names(seqs) %>% 
-  str_extract("[^ ]*") # take everything before the first space
+# replace NaN with 0
+blastp_nofilter$E_diff.tanoak_oak[is.nan(blastp_nofilter$E_diff.tanoak_oak)] <- 0
+
+blastp_nofilter <- blastp_nofilter %>%
+  filter(E_diff.tanoak_oak <= 0)
+
+# 12808 with reciprocity only
+# 12808 with reciprocity + E value cutoff
+
+dcmega_nofilter <- tanoak_dcmega_recip %>%
+  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-4) #%>%
+
+# 13833 with reciprocity only
+# 13828 with reciprocity + E value cutoff
+
+head(blastp_nofilter, 50)
+head(dcmega_nofilter, 50)
+#blastp_nofilter[1]
+#dcmega_nofilter[1]
+
+# problem in E_diff filtering. log(0) - log(0) is NaN. need to convert those values to 0
 ```
-
-```{r}
-# prep filenames
-tanoak_blastp_ortho <- tanoak_blastp_ortho %>%
-  select(query_id, subject_id) %>%
-  mutate(filepath = paste0("../output/ortho/blastp/raw_seqs/", query_id, "--", subject_id, ".fasta"))
-
-tanoak_dcmega_ortho <- tanoak_dcmega_ortho %>%
-  select(query_id, subject_id) %>%
-  mutate(filepath = paste0("../output/ortho/dcmegablast/raw_seqs/", query_id, "--", subject_id, ".fasta"))
-
-head(tanoak_blastp_ortho)
-
-
-# filepath needs to be updated to ../output/ortho/blastp/raw_seqs/
-# bash one liner just in case filenames are off
-# for file in *.fasta; do mv "$file" "${file#raw_seqs}"; done
-```
-
-```{r}
-# generate inital 1000 fasta files for exploration
-
-# for each row in the table,
-#   find the sequence data in seqs for query and subject IDs
-#   put DNAstrings into a DNAStringSet object
-#   export using the filename at the given index
-system.time(
-for (i in seq(1, 1000)) {
-  # get ID names
-  tanoak_id <- tanoak_blastp_ortho[i, ]$query_id
-  oak_id <- tanoak_blastp_ortho[i, ]$subject_id
-  path <- tanoak_blastp_ortho[i, ]$filepath
-  
-  # get sequence data
-  ids <- c(tanoak_id, oak_id)
-  ortho_pair <- seqs[ids]
-  
-  # export as a fasta file
-  writeXStringSet(x = ortho_pair, filepath = path)
-})
-
-# ~3.5 minutes to generate 1000 fasta files
-```
-
-
-```{r}
-# generate the rest for blastp
-
-# for each row in the table,
-#   find the sequence data in seqs for query and subject IDs
-#   put DNAstrings into a DNAStringSet object
-#   export using the filename at the given index
-system.time(
-for (i in seq(1001, 7638)) {
-  # get ID names
-  tanoak_id <- tanoak_blastp_ortho[i, ]$query_id
-  oak_id <- tanoak_blastp_ortho[i, ]$subject_id
-  path <- tanoak_blastp_ortho[i, ]$filepath
-  
-  # get sequence data
-  ids <- c(tanoak_id, oak_id)
-  ortho_pair <- seqs[ids]
-  
-  # export as a fasta file
-  writeXStringSet(x = ortho_pair, filepath = path)
-})
-
-# ~8 minutes to generate the rest
-```
-
-```{r}
-# generate fasta files for dcmegablast
-
-system.time(
-for (i in seq(1, 5336)) {
-  # get ID names
-  tanoak_id <- tanoak_dcmega_ortho[i, ]$query_id
-  oak_id <- tanoak_dcmega_ortho[i, ]$subject_id
-  path <- tanoak_dcmega_ortho[i, ]$filepath
-  
-  # get sequence data
-  ids <- c(tanoak_id, oak_id)
-  ortho_pair <- seqs[ids]
-  
-  # export as a fasta file
-  writeXStringSet(x = ortho_pair, filepath = path)
-})
-
-# 6 mins to run
-```
-
-
-
-
 
 
 
