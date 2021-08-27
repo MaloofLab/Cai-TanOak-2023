@@ -135,6 +135,10 @@ for (i in 1:length(go_annot)) {
 blastp_dnds_annot_cleaned
 ```
 
+```{r}
+# export
+write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+```
 
 
 
