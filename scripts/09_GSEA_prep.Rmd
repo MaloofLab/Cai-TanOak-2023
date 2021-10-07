@@ -1,0 +1,135 @@
+---
+title: "File Preparation for GSEA"
+author: "Paulo Magalang"
+date: "10/1/2021"
+output: html_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+# load in libraries
+library(tidyverse)
+library(stringr)
+```
+
+```{r}
+# load in data
+blastp_dnds <- read_tsv(file = "../output/TanOak_blastp_orthologs_dnds.tsv")
+
+head(blastp_dnds)
+```
+
+```{r}
+# drop rows with non-finite dn/ds ratios and missing GO annotations
+blastp_dnds_filtered <- blastp_dnds %>% filter(!is.nan(dnds), !is.na(dnds), !is.infinite(dnds), dnds >= 0, !is.na(GO_annotations))
+# 7368 rows to 5039 after filtering step
+
+# plot distribution of dn/ds ratios
+blastp_dnds_filtered %>% ggplot(aes(x = dnds)) + geom_histogram(binwidth = 0.05) + 
+  geom_vline(xintercept = 0.15, color = "red") + geom_vline(xintercept = 1.35, color = "red")
+
+blastp_dnds_filtered$dnds %>% summary()
+# distribution looking gamma-ish
+```
+
+```{r}
+######
+# assign top and bottom 5% of dn/ds values as 1 and the rest as 0
+# can take advantage of indices since the values are already sorted
+
+# 5039 * 0.05 = 251.95 -> 252
+#extreme_dnds <- rep(0, 5039)
+#extreme_dnds[1:252] <- 1
+#extreme_dnds[4787:5039] <- 1 # 5039 - 252
+
+#blastp_dnds_filtered %>% mutate(extreme_dnds = extreme_dnds)
+
+# might not be a good cutoff since top 5% of dn/ds values are ~1.1 - ~9
+######
+
+# try establishing dn/ds cutoffs instead
+# 1 for extreme dn/ds (<= 0.5 and >= 1.5), 0 for everything else
+blastp_dnds_filtered %>% mutate(class = ifelse(dnds <= 0.15 | dnds >= 1.35, 1, 0)) # 680 extreme genes (521 with dn/ds <= 0.5, 159 with dn/ds >= 1.5)
+ifelse(blastp_dnds_filtered$dnds <= 0.15 | blastp_dnds_filtered$dnds >= 1.35, 1, 0) %>% sum()
+```
+
+File prep for GSEA-Preranked:
+
+* gene sets (get all gene names associated with a GO term) as .gmt
+  - 1st column: GO term
+  - 2nd column: NAs
+  - the rest: genes associated with GO term
+  
+* ranked list
+  - GO term
+  - dn/ds ratio
+
+
+```{r}
+# data wrangling for gene sets
+
+# take entire column of GO terms and vectorize, filter out duplicate terms
+all_go_terms <- str_extract_all(blastp_dnds_filtered$GO_annotations, "GO:[0-9]*") %>% unlist() %>% unique()
+
+# init. gene sets, start with all gene names in one column for now
+gene_sets <- tibble(all_go_terms) %>% mutate(desc = NA, genes = NA)
+
+# for each GO term, check blastp_dnds_filtered for the gene(s) associated with the GO term
+for (i in 1:dim(gene_sets)[1]) {
+  # use logical vector to subset tanoak gene names, store in current index
+  occurrences <- blastp_dnds_filtered$GO_annotations %>% str_detect(all_go_terms[i]) # indices should match up with gene_sets
+  gene_sets[i, 3] <- blastp_dnds_filtered$tanoak[occurrences] %>% paste0(collapse = ",")
+}
+
+# can write out as .csv file and use sed or tr to change "," to "\t", save as .gmt file
+#write.table(gene_sets, file = "../input/gsea/blastp/TanOak_blastp_geneset.csv", quote = FALSE, sep = ",", row.names = FALSE, col.names = FALSE)
+```
+
+```{bash, eval = FALSE}
+cat TanOak_blastp_geneset.csv | sed 's/,/\t/g' > TanOak_blastp_geneset.gmt
+```
+
+```{r}
+# ranked list
+rank_list <- blastp_dnds_filtered %>% select(tanoak, dnds) %>%
+  select(tanoak, dnds)
+
+names(rank_list) <- c("NAME", "dnds")
+
+head(rank_list)
+
+#write.table(rank_list, file = "../input/gsea/blastp/TanOak_blastp_preranked.rnk", quote = FALSE, sep = "\t", row.names = FALSE, col.names = FALSE)
+```
+
+
+
+File prep for GSEA (not used since a .chip file cannot be generated)
+
+* expression dataset (use dn/ds ratio here) as .txt
+  - 1st col: gene names (NAME)
+  - 2nd col: NAs (DESCRIPTION)
+  - 3rd col: dnds ratios
+
+* phenotype lablels (0/1 in extreme_dnds column) as .cls
+
+```{r}
+# "expression" dataset
+expr <- blastp_dnds_filtered %>% select(tanoak, dnds) %>% mutate(DESCRIPTION = NA) %>%
+  select(tanoak, DESCRIPTION, dnds)
+
+names(expr) <- c("NAME", "DESCRIPTION", "dnds")
+
+head(expr)
+
+#write.table(expr, file = "../input/gsea/blastp/TanOak_blastp_expression.txt", quote = FALSE, sep = "\t", row.names = FALSE)
+```
+
+```{r}
+# phenotype labels
+labels <- ifelse(blastp_dnds_filtered$dnds <= 0.15 | blastp_dnds_filtered$dnds >= 1.35, 1, 0)
+#write.table(matrix(labels, nrow = 1), file = "../input/gsea/blastp/TanOak_blastp_phenotype.cls", sep = "\t", row.names = FALSE, col.names = FALSE)
+
+# write in first two lines using vim
+# 5039 2 1
+# # REG EXTR (0 = REG, 1 = EXTR)
+# the labels
+```
