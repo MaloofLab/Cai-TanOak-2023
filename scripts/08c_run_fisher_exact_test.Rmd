@@ -1,0 +1,186 @@
+---
+title: "dn/ds Fisher's Exact"
+author: "Paulo Magalang"
+date: "10/8/2021"
+output: html_document
+---
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(stringr)
+library(GO.db)
+library(dplyr)
+```
+
+
+```{r}
+# load in data
+blastp_dnds <- read_tsv(file = "../output/TanOak_blastp_orthologs_dnds.tsv")
+blastp_dnds_filtered <- blastp_dnds %>% filter(!is.nan(dnds), !is.na(dnds), !is.infinite(dnds), dnds >= 0, !is.na(GO_annotations)) # 7368 to 5039 after filtering step
+
+
+# map genes to each GO term
+# take entire column of GO terms and vectorize, filter out duplicate terms
+all_go_terms <- str_extract_all(blastp_dnds_filtered$GO_annotations, "GO:[0-9]*") %>% unlist() %>% unique()
+
+# init. gene sets, start with all gene names in one column for now
+gene_sets <- tibble(all_go_terms) %>% mutate(genes = NA)
+
+# for each GO term, check blastp_dnds_filtered for the gene(s) associated with the GO term
+for (i in 1:dim(gene_sets)[1]) {
+  # use logical vector to subset tanoak gene names, store in current index
+  occurrences <- blastp_dnds_filtered$GO_annotations %>% str_detect(all_go_terms[i]) # indices should match up with gene_sets
+  gene_sets[i, 2] <- blastp_dnds_filtered$tanoak[occurrences] %>% paste0(collapse = ",")
+}
+```
+
+
+```{r}
+p_values <- rep(0, dim(gene_sets)[1])
+
+for (i in 1:dim(gene_sets)[1]) { # for each GO term
+  # initialize contingency table
+  cont_table <- matrix(0, 2, 2)
+  
+  for (j in 1:dim(blastp_dnds_filtered)[1]) { # for each gene
+    # determine if the jth gene corresponds to the ith GO term
+    gene <- blastp_dnds_filtered$tanoak[j]
+    is_in_gene_set <- gene_sets$genes[i] %>% str_detect(gene)
+    
+    # determine if the jth gene has a "high" dn/ds ratio (upper cutoff at >= 1.35)
+    is_high_dnds <- blastp_dnds_filtered$dnds[j] >= 1.35
+    
+    # add to contingency table
+    if (is_in_gene_set) {
+      if (is_high_dnds) {
+        count <- cont_table[1, 1]
+        count <- count + 1
+        cont_table[1, 1] <- count
+      }
+      else if (!is_high_dnds) {
+        count <- cont_table[2, 1]
+        count <- count + 1
+        cont_table[2, 1] <- count
+      }
+    }
+    else {
+      if (is_high_dnds) {
+        count <- cont_table[1, 2]
+        count <- count + 1
+        cont_table[1, 2] <- count
+      }
+      else if (!is_high_dnds) {
+        count <- cont_table[2, 2]
+        count <- count + 1
+        cont_table[2, 2] <- count
+      }
+    }
+  }
+  
+  # perform fisher's exact test
+  test <- fisher.test(cont_table)
+  
+  # store unadjusted p-value
+  p_values[i] <- test$p.value
+  
+}
+
+gene_sets <- gene_sets %>% mutate(p.value_high_dnds_unadjusted = p_values)
+```
+
+
+```{r}
+p_values <- rep(0, dim(gene_sets)[1])
+
+for (i in 1:dim(gene_sets)[1]) { # for each GO term
+  # initialize contingency table
+  cont_table <- matrix(0, 2, 2)
+  
+  for (j in 1:dim(blastp_dnds_filtered)[1]) { # for each gene
+    # determine if the jth gene corresponds to the ith GO term
+    gene <- blastp_dnds_filtered$tanoak[j]
+    is_in_gene_set <- gene_sets$genes[i] %>% str_detect(gene)
+    
+    # determine if the jth gene has a "low" dn/ds ratio (lower cutoff at <= 0.15)
+    is_high_dnds <- blastp_dnds_filtered$dnds[j] <= 0.15
+    
+    # add to contingency table
+    if (is_in_gene_set) {
+      if (is_high_dnds) {
+        count <- cont_table[1, 1]
+        count <- count + 1
+        cont_table[1, 1] <- count
+      }
+      else if (!is_high_dnds) {
+        count <- cont_table[2, 1]
+        count <- count + 1
+        cont_table[2, 1] <- count
+      }
+    }
+    else {
+      if (is_high_dnds) {
+        count <- cont_table[1, 2]
+        count <- count + 1
+        cont_table[1, 2] <- count
+      }
+      else if (!is_high_dnds) {
+        count <- cont_table[2, 2]
+        count <- count + 1
+        cont_table[2, 2] <- count
+      }
+    }
+  }
+  
+  # perform fisher's exact test
+  test <- fisher.test(cont_table)
+  
+  # store unadjusted p-value
+  p_values[i] <- test$p.value
+  
+}
+
+gene_sets <- gene_sets %>% mutate(p.value_low_dnds_unadjusted = p_values)
+
+# adjust for multiple testing
+gene_sets <- gene_sets %>% mutate(fdr.low_dnds = p.adjust(gene_sets$p.value_low_dnds_unadjusted, method = "fdr"),
+                                  fdr.high_dnds = p.adjust(gene_sets$p.value_high_dnds_unadjusted, method = "fdr"))
+  
+```
+
+```{r}
+# get GO descriptions
+goterms <- Term(GOTERM)
+
+goterms_table <- tibble(GO_term = names(goterms), GO_desc = goterms)
+
+# left join to gene_sets
+gene_sets_desc <- left_join(gene_sets, goterms_table, by=c("all_go_terms"="GO_term"))
+```
+
+```{r}
+# prep for export
+gene_sets_desc_lowdnds <- gene_sets_desc %>% arrange(fdr.low_dnds) %>%
+  dplyr::select(all_go_terms, GO_desc, p.value_low_dnds_unadjusted, fdr.low_dnds, genes)
+
+names(gene_sets_desc_lowdnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
+
+gene_sets_desc_highdnds <- gene_sets_desc %>% arrange(fdr.high_dnds) %>%
+  dplyr::select(all_go_terms, GO_desc, p.value_high_dnds_unadjusted, fdr.high_dnds, genes)
+
+names(gene_sets_desc_highdnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
+```
+
+```{r}
+# export tables
+write.table(gene_sets_desc_lowdnds, file = "../output/TanOak_blastp_low_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+
+write.table(gene_sets_desc_highdnds, file = "../output/TanOak_blastp_high_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
