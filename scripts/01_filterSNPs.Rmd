@@ -1,7 +1,7 @@
 ---
 title: "01_SNP_filtering"
 author: "Julin Maloof"
-date: "11/20/2020"
+date: "01/15/2022"
 output: html_document
 ---
 
@@ -17,7 +17,7 @@ Plan:
   * DEPTH
 * Simple Association?
 * Then annotate
-* PCA colored by resistnace
+* PCA colored by resistance
 * LD extent for large contigs
 
 ## setup
@@ -25,7 +25,7 @@ Plan:
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
 ```
 
 ```{r}
@@ -34,27 +34,44 @@ dir(datadir)
 
 Index the fasta file.  Only needs to be done once
 ```{bash, eval=FALSE}
-samtools faidx '/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.fasta'
+samtools faidx '/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta'
 ```
 
 ```{r}
-contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.fasta.fai"), 
+contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai"), 
                   col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
   dplyr::select(name, length) %>%
   arrange(desc(length))
 head(contig.lengths, 10)
 ```
 
+```{r}
+if(!file.exists(file.path(datadir, "cohort.all.genotyped.vcf.gz"))) 
+  indexTabix(file.path(datadir, "cohort.all.genotyped.vcf.gz"), format = "vcf")
+```
+
+
 ## take a look at a single contig
 
 load it
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.genotyped.vcf.gz"))
-vcfVR <- readVcfAsVRanges(tab, param=GRanges(seqnames = contig.lengths$name[1],
-                                  ranges = IRanges(start = 1, end=contig.lengths$length[1])))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
 vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[1],
                                   ranges = IRanges(start = 1, end=contig.lengths$length[1])))
 ```
+
+### remove XL samples (these are duplicates of the same plant
+
+```{r}
+vcf.all <- vcf
+
+keep <- rownames(colData(vcf.all)) %>%
+  str_subset(pattern="XL", negate = TRUE)
+
+vcf <- vcf.all[,keep]
+colData(vcf)
+```
+
 
 ### quality
 ```{r}
@@ -243,7 +260,7 @@ contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.fasta.fai"),
   dplyr::select(name, length) %>%
   arrange(desc(length))
 
-tab <- TabixFile(file.path(datadir, "cohort.genotyped.vcf.gz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
 
 fisherp2 <- function(gt,pheno) {
     if(length(unique(gt))==1) 
