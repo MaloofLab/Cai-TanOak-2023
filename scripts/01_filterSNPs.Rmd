@@ -313,5 +313,9 @@ for(i in 1:nrow(contig.lengths_tab)) {
 }
 ```
 
+```{r}
+R.utils::gzip("../output/fisherp.csv")
+```
+
 
 
