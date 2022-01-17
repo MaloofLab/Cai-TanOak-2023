@@ -32,7 +32,7 @@ datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
 dir(datadir)
 ```
 
-Index the fasta file.  Only needs to be done once
+Index the file.  Only needs to be done once
 ```{bash, eval=FALSE}
 samtools faidx '/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta'
 ```
@@ -60,18 +60,6 @@ vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[1],
                                   ranges = IRanges(start = 1, end=contig.lengths$length[1])))
 ```
 
-### remove XL samples (these are duplicates of the same plant
-
-```{r}
-vcf.all <- vcf
-
-keep <- rownames(colData(vcf.all)) %>%
-  str_subset(pattern="XL", negate = TRUE)
-
-vcf <- vcf.all[,keep]
-colData(vcf)
-```
-
 
 ### quality
 ```{r}
@@ -87,7 +75,7 @@ min(rowRanges(vcf)$QUAL)
 
 ### Genotyped allele number
 
-This is the number of allele genotype calls made.  With 14 samples, the max here is 28
+This is the number of allele genotype calls made.  With 19 samples, the max here is 38
 ```{r}
 info(vcf)$AN %>% tibble(AN=.) %>%
   ggplot(aes(x=AN)) +
@@ -95,7 +83,7 @@ info(vcf)$AN %>% tibble(AN=.) %>%
   ggtitle("Number of Alleles Called") +
   xlab("Allele Number (AN)") +
   ylab("Count") +
-  scale_x_continuous(breaks=seq(2,28,2))
+  scale_x_continuous(breaks=seq(2,38,2))
 ```
 
 ### Number of alternative alleles
@@ -115,7 +103,7 @@ Overall this looks like little filtering is needed.  But let's do a little.
 ```{r}
 vcf.filter <- vcf[rowRanges(vcf)$QUAL > 50 &
                     sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
-                    info(vcf)$AN == 28] # require complete genotype info for now 
+                    info(vcf)$AN == 38] # require complete genotype info for now 
 length(vcf)
 length(vcf.filter)
 ```
@@ -255,12 +243,17 @@ fisherp2 <- function(gt,pheno) {
 ### constant data and functions
 
 ```{r}
-contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.fasta.fai"), 
+contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai"), 
                   col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
   dplyr::select(name, length) %>%
   arrange(desc(length))
 
 tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
+
+tab_seqnames <- seqnamesTabix(tab)
+
+contig.lengths_tab <- contig.lengths %>%
+  filter(name %in% tab_seqnames)
 
 fisherp2 <- function(gt,pheno) {
     if(length(unique(gt))==1) 
@@ -283,16 +276,19 @@ pheno <- read_csv("../input/TanOakResistance.csv") %>%
 ```{r, warning=FALSE}
 if(file.exists("../output/fisherp.csv")) file.remove("../output/fisherp.csv")
 
-for(i in 1:nrow(contig.lengths)) {
+for(i in 1:nrow(contig.lengths_tab)) {
   
-  vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[i],
-                                     ranges = IRanges(start = 1, end=contig.lengths$length[i])))
+  
+  vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths_tab$name[i],
+                                     ranges = IRanges(start = 1, end=contig.lengths_tab$length[i])))
   
   sampleIDs <- samples(header(vcf))
   
   vcf <- vcf[rowRanges(vcf)$QUAL > 50 &
                sapply(info(vcf)$AC, length) == 1 & #stick with biallelic SNPs for now
-               info(vcf)$AN == 28] # require complete genotype info for now 
+               info(vcf)$AN == 38] # require complete genotype info for now 
+  
+  if (dim(vcf)[1]==0) next()
   
   vcf.GT <- t(geno(vcf)$GT) %>% 
     apply(2, str_replace, stringr::fixed("|"), "/")
@@ -307,7 +303,7 @@ for(i in 1:nrow(contig.lengths)) {
   
   fisherp.result <- tibble(index=i,
                            varID=colnames(vcf.GT.pheno)[-1],
-                           fisherp=apply(vcf.GT.pheno[,-1], 2, fisherp2, vcf.GT.pheno$Tolerance_Resistance)
+                           fisherp=apply(vcf.GT.pheno[,-1, drop=FALSE], 2, fisherp2, vcf.GT.pheno$Tolerance_Resistance)
   )
   
   fisherp.result <- na.omit(fisherp.result)
