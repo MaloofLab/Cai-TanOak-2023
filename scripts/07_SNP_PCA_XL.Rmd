@@ -13,6 +13,7 @@ __RUNS OUT OF MEMORY ON MY LAPTOP, RUN ELSEWHERE__
 library(tidyverse)
 library(VariantAnnotation)
 library(ggrepel)
+library(snpStats)
 #datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
 datadir <- "../input/new_12_2021_assembly/" # for cluster
 outdir <- "../output/"
@@ -116,6 +117,11 @@ results <- results %>%
   mutate(PCtibble = map(PCs, getPCtibble))
 gc()
 ```
+
+```{r}
+save(results, "../output/XL_PCA_resutls.Rdata")
+```
+
 
 ```{r}
 results %>% dplyr::select(trial, pctvar) %>% 
