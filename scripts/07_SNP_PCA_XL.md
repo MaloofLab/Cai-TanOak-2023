@@ -15,7 +15,7 @@ library(tidyverse)
 ```
 
 ```
-## ── Attaching packages ───────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.1 ──
+## ── Attaching packages ───────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.1 ──
 ```
 
 ```
@@ -26,9 +26,12 @@ library(tidyverse)
 ```
 
 ```
-## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ tidyr::expand() masks Matrix::expand()
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
+## ✖ tidyr::pack()   masks Matrix::pack()
+## ✖ tidyr::unpack() masks Matrix::unpack()
 ```
 
 ```r
@@ -150,6 +153,12 @@ library(VariantAnnotation)
 ## The following object is masked from 'package:tidyr':
 ## 
 ##     expand
+```
+
+```
+## The following objects are masked from 'package:Matrix':
+## 
+##     expand, unname
 ```
 
 ```
@@ -277,30 +286,16 @@ library(ggrepel)
 
 ```r
 #datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
-datadir <- "../input/"
+datadir <- "../input/new_12_2021_assembly/" # for cluster
 outdir <- "../output/"
 ```
 
 
 ```r
 tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
-```
 
-```
-## Error: TabixFile: file(s) do not exist:
-##   '../input//cohort.all.genotyped.vcf.gz'
-##   '../input//cohort.all.genotyped.vcf.gz.tbi'
-```
-
-```r
 tab_seqnames <- seqnamesTabix(tab)
-```
 
-```
-## Error in h(simpleError(msg, call)): error in evaluating the argument 'file' in selecting a method for function 'seqnamesTabix': object 'tab' not found
-```
-
-```r
 contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai"), 
                   col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
   dplyr::select(name, length) %>%
@@ -308,7 +303,15 @@ contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90
 ```
 
 ```
-## Error: '../input//PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai' does not exist in current working directory ('/share/malooflab/Julin/git/TanOak/scripts').
+## 
+## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## cols(
+##   name = col_character(),
+##   length = col_double(),
+##   offset = col_double(),
+##   lineLength = col_double(),
+##   lineLengthB = col_double()
+## )
 ```
 
 ```r
@@ -316,16 +319,24 @@ head(contig.lengths, 10)
 ```
 
 ```
-## Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'head': object 'contig.lengths' not found
+## # A tibble: 10 x 2
+##    name        length
+##    <chr>        <dbl>
+##  1 445_pilon 16254951
+##  2 345_pilon 15331457
+##  3 268_pilon 12566597
+##  4 264_pilon 12485716
+##  5 266_pilon 11869767
+##  6 265_pilon 10935069
+##  7 606_pilon 10588550
+##  8 316_pilon 10358023
+##  9 353_pilon 10280650
+## 10 262_pilon  9808046
 ```
 
 ```r
 contig.lengths_tab <- contig.lengths %>%
   filter(name %in% tab_seqnames)
-```
-
-```
-## Error in filter(., name %in% tab_seqnames): object 'contig.lengths' not found
 ```
 
 
@@ -339,7 +350,7 @@ pheno <- read_csv("../input/TanOakResistance.csv") %>%
 
 ```
 ## 
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## cols(
 ##   Tanoak = col_character(),
 ##   Tolerance_Resistance = col_character(),
@@ -409,18 +420,25 @@ figure out subsets
 contig.lengths_tab <- contig.lengths_tab %>% arrange(desc(length)) %>%
   mutate(cum_length=cumsum(length)) %>%
   mutate(group=floor((1 + cum_length/100000000)))
-```
 
-```
-## Error in arrange(., desc(length)): object 'contig.lengths_tab' not found
-```
-
-```r
 contig.lengths_tab
 ```
 
 ```
-## Error in eval(expr, envir, enclos): object 'contig.lengths_tab' not found
+## # A tibble: 11,330 x 4
+##    name        length cum_length group
+##    <chr>        <dbl>      <dbl> <dbl>
+##  1 445_pilon 16254951   16254951     1
+##  2 345_pilon 15331457   31586408     1
+##  3 268_pilon 12566597   44153005     1
+##  4 264_pilon 12485716   56638721     1
+##  5 266_pilon 11869767   68508488     1
+##  6 265_pilon 10935069   79443557     1
+##  7 606_pilon 10588550   90032107     1
+##  8 316_pilon 10358023  100390130     2
+##  9 353_pilon 10280650  110670780     2
+## 10 262_pilon  9808046  120478826     2
+## # … with 11,320 more rows
 ```
 
 
@@ -443,9 +461,112 @@ results <- results %>%
 ```
 
 ```
-## Error: Problem with `mutate()` column `PCs`.
-## ℹ `PCs = map(trial, getPCs)`.
-## ✖ error in evaluating the argument 'x' in selecting a method for function 'which': object 'contig.lengths_tab' not found
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in FUN(X[[i]], ...): duplicate ID's in header will be forced to unique
+## rownames
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in FUN(X[[i]], ...): duplicate ID's in header will be forced to unique
+## rownames
+```
+
+```
+## non-single nucleotide variations are set to NA
+```
+
+```
+## [1] 2
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+
+## Warning in .bcfHeaderAsSimpleList(header): duplicate ID's in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in FUN(X[[i]], ...): duplicate ID's in header will be forced to unique
+## rownames
+```
+
+```
+## non-single nucleotide variations are set to NA
+```
+
+```
+## [1] 3
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+
+## Warning in .bcfHeaderAsSimpleList(header): duplicate ID's in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in FUN(X[[i]], ...): duplicate ID's in header will be forced to unique
+## rownames
+```
+
+```
+## non-single nucleotide variations are set to NA
+```
+
+```
+## [1] 4
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+
+## Warning in .bcfHeaderAsSimpleList(header): duplicate ID's in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in .bcfHeaderAsSimpleList(header): duplicate keys in header will be
+## forced to unique rownames
+```
+
+```
+## Warning in FUN(X[[i]], ...): duplicate ID's in header will be forced to unique
+## rownames
+```
+
+```
+## non-single nucleotide variations are set to NA
+```
+
+```
+## Joining, by = "sampleID"
+## Joining, by = "sampleID"
+## Joining, by = "sampleID"
+## Joining, by = "sampleID"
 ```
 
 ```r
@@ -453,9 +574,9 @@ gc()
 ```
 
 ```
-##            used  (Mb) gc trigger  (Mb) limit (Mb) max used  (Mb)
-## Ncells  9610404 513.3   14802802 790.6         NA 10883123 581.3
-## Vcells 16499969 125.9   25842636 197.2     102400 21136541 161.3
+##             used   (Mb) gc trigger    (Mb) limit (Mb)   max used    (Mb)
+## Ncells  19224222 1026.7  233598009 12475.5         NA  271272964 14487.6
+## Vcells 198659862 1515.7 1953556557 14904.5     102400 2441945696 18630.6
 ```
 
 
@@ -466,10 +587,7 @@ results %>% dplyr::select(trial, pctvar) %>%
   geom_col(position = "dodge")
 ```
 
-```
-## Error: Can't subset columns that don't exist.
-## ✖ Column `pctvar` doesn't exist.
-```
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png)
 
 ```r
 ggsave("../output/XL_PCA_pctvar_length_100000000.pdf")
@@ -491,8 +609,7 @@ results %>% dplyr::select(trial, PCtibble) %>%
 ```
 
 ```
-## Error: Can't subset columns that don't exist.
-## ✖ Column `PCtibble` doesn't exist.
+## Error in geom_text_repel(size = 3): could not find function "geom_text_repel"
 ```
 
 ```r
@@ -516,8 +633,7 @@ results %>% dplyr::select(trial, PCtibble) %>%
 ```
 
 ```
-## Error: Can't subset columns that don't exist.
-## ✖ Column `PCtibble` doesn't exist.
+## Error in geom_text_repel(size = 3): could not find function "geom_text_repel"
 ```
 
 ```r
