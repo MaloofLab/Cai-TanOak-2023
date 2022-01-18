@@ -7,21 +7,27 @@ Will make a PCA plot of SNPs, colored by phenotype.
 
 In this version include XL assemblies
 
+__RUNS OUT OF MEMORY ON MY LAPTOP, RUN ELSEWHERE__
+
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
 library(ggrepel)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/vcf_with_xl/"
+#datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
+datadir <- "../input/"
 outdir <- "../output/"
 ```
 
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.XL.genotyped.vcf.gz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
-## load contig lengths file 
-contig.lengths <- read_csv("../output/contigLengths.csv")
+contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai"), 
+                  col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
+  dplyr::select(name, length) %>%
+  arrange(desc(length))
+head(contig.lengths, 10)
 
 contig.lengths_tab <- contig.lengths %>%
   filter(name %in% tab_seqnames)
