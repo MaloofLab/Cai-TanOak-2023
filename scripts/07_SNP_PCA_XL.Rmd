@@ -14,7 +14,7 @@ library(tidyverse)
 library(VariantAnnotation)
 library(ggrepel)
 #datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
-datadir <- "../input/"
+datadir <- "../input/new_12_2021_assembly/" # for cluster
 outdir <- "../output/"
 ```
 
