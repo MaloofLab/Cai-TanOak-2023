@@ -1,6 +1,6 @@
 ---
 title: "PCA of SNPs"
-output: html_notebook
+output: html_document
 ---
 
 Will make a PCA plot of SNPs, colored by phenotype.

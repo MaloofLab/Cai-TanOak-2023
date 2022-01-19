@@ -1,6 +1,6 @@
 ---
 title: "PCA of SNPs"
-output: html_notebook
+output: html_document
 ---
 
 Will make a PCA plot of SNPs, colored by phenotype.
@@ -27,11 +27,8 @@ library(tidyverse)
 
 ```
 ## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ tidyr::expand() masks Matrix::expand()
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
-## ✖ tidyr::pack()   masks Matrix::pack()
-## ✖ tidyr::unpack() masks Matrix::unpack()
 ```
 
 ```r
@@ -156,12 +153,6 @@ library(VariantAnnotation)
 ```
 
 ```
-## The following objects are masked from 'package:Matrix':
-## 
-##     expand, unname
-```
-
-```
 ## The following objects are masked from 'package:base':
 ## 
 ##     expand.grid, I, unname
@@ -278,10 +269,38 @@ library(VariantAnnotation)
 
 ```r
 library(ggrepel)
+library(snpStats)
 ```
 
 ```
-## Error in library(ggrepel): there is no package called 'ggrepel'
+## Loading required package: survival
+```
+
+```
+## Loading required package: Matrix
+```
+
+```
+## 
+## Attaching package: 'Matrix'
+```
+
+```
+## The following object is masked from 'package:VariantAnnotation':
+## 
+##     expand
+```
+
+```
+## The following object is masked from 'package:S4Vectors':
+## 
+##     expand
+```
+
+```
+## The following objects are masked from 'package:tidyr':
+## 
+##     expand, pack, unpack
 ```
 
 ```r
@@ -575,9 +594,19 @@ gc()
 
 ```
 ##             used   (Mb) gc trigger    (Mb) limit (Mb)   max used    (Mb)
-## Ncells  19224222 1026.7  233598009 12475.5         NA  271272964 14487.6
-## Vcells 198659862 1515.7 1953556557 14904.5     102400 2441945696 18630.6
+## Ncells  19194329 1025.1  243290170 12993.1         NA  300414956 16043.9
+## Vcells 232147366 1771.2 2034738268 15523.9     102400 2543422834 19404.8
 ```
+
+
+```r
+save(results, "../output/XL_PCA_resutls.Rdata")
+```
+
+```
+## Error in save(results, "../output/XL_PCA_resutls.Rdata"): object '../output/XL_PCA_resutls.Rdata' not found
+```
+
 
 
 ```r
@@ -587,7 +616,7 @@ results %>% dplyr::select(trial, pctvar) %>%
   geom_col(position = "dodge")
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png)
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
 
 ```r
 ggsave("../output/XL_PCA_pctvar_length_100000000.pdf")
@@ -608,9 +637,7 @@ results %>% dplyr::select(trial, PCtibble) %>%
   theme(legend.position = "top")
 ```
 
-```
-## Error in geom_text_repel(size = 3): could not find function "geom_text_repel"
-```
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png)
 
 ```r
 ggsave("../output/XL_PCA_length_100000000.pdf")
@@ -632,9 +659,7 @@ results %>% dplyr::select(trial, PCtibble) %>%
   theme(legend.position = "top")
 ```
 
-```
-## Error in geom_text_repel(size = 3): could not find function "geom_text_repel"
-```
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13-1.png)
 
 ```r
 ggsave("../output/XL_PCA_length_100000000_single.pdf")
