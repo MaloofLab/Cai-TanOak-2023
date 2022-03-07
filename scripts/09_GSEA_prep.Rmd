@@ -48,7 +48,7 @@ blastp_dnds_filtered$dnds %>% summary()
 
 # try establishing dn/ds cutoffs instead
 # 1 for extreme dn/ds (<= 0.5 and >= 1.5), 0 for everything else
-blastp_dnds_filtered %>% mutate(class = ifelse(dnds <= 0.15 | dnds >= 1.35, 1, 0)) # 680 extreme genes (521 with dn/ds <= 0.5, 159 with dn/ds >= 1.5)
+blastp_dnds_filtered %>% mutate(class = ifelse(dnds <= 0.15 | dnds >= 1.35, 1, 0)) # 680 extreme genes (521 with dn/ds <= 0.15, 159 with dn/ds >= 1.35)
 ifelse(blastp_dnds_filtered$dnds <= 0.15 | blastp_dnds_filtered$dnds >= 1.35, 1, 0) %>% sum()
 ```
 

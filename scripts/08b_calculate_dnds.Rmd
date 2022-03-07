@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(Biostrings)
 library(ape)
+library(seqinr)
 library(stringr)
 ```
 
@@ -72,8 +73,9 @@ for (i in 1:total) {
 ```{r}
 # strange cases
 blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
-blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # check to see if sequences are the same
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
 blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
+blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] # gap in the beginning of one sequence and sequences are identical
 ```
 
 ```{r}
@@ -136,8 +138,8 @@ blastp_dnds_annot_cleaned
 ```
 
 ```{r}
-# export
-write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+# export (only run when needed)
+#write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
 ```
 
 
@@ -156,6 +158,7 @@ write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs
 cat example_file.fasta | sort | uniq | wc -l
 
 # expect output to be 3 if there are two completely identical sequences
+# dn/ds values with NA are identical sequences
 ```
 
 
