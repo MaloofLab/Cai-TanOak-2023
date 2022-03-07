@@ -1,7 +1,7 @@
 ---
 title: "BLAST Tanoak OAK"
 author: "Julin Maloof"
-date: "7/21/2021"
+date: "01/17/2022"
 output: html_document
 ---
 
@@ -24,6 +24,12 @@ if(!file.exists("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa.gz")) {
 }
 ```
 
+## create fasta files
+```{bash, eval=FALSE}
+ gffread -g PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta -x 12_21_tanoak_CDS.fa -y 12_21_tanoak_aa.fa 12_21_tanoak_cds.gff
+```
+
+
 ## make blast databases
 
 ```{bash, eval=FALSE}
@@ -35,9 +41,9 @@ makeblastdb -in Qrob_PM1N_CDS_nt_20161004.fa -dbtype nucl
 gunzip Qrob_PM1N_CDS_aa_20161004.fa.gz
 makeblastdb -in Qrob_PM1N_CDS_aa_20161004.fa -dbtype prot
 
-makeblastdb -in PanGenome_ONT_pilon.all.maker.transcripts.fasta -dbtype nucl
+makeblastdb -in 12_21_tanoak_CDS.fa -dbtype nucl
 
-makeblastdb -in PanGenome_ONT_pilon.all.maker.proteins.fasta -dbtype prot
+makeblastdb -in 12_21_tanoak_aa.fa -dbtype prot
 ```
 
 ## nucleotide blast
@@ -46,7 +52,7 @@ Tanoak to Oak
 
 ```{bash}
 cd ../input/blast
-time blastn -query PanGenome_ONT_pilon.all.maker.transcripts.fasta \
+time blastn -query 12_21_tanoak_CDS.fa \
   -db Qrob_PM1N_CDS_nt_20161004.fa \
   -strand plus \
   -task dc-megablast \
@@ -63,7 +69,7 @@ Oak to Tanoak
 ```{bash}
 cd ../input/blast
 time blastn -query Qrob_PM1N_CDS_nt_20161004.fa \
-  -db PanGenome_ONT_pilon.all.maker.transcripts.fasta  \
+  -db  12_21_tanoak_CDS.fa \
   -strand plus \
   -task dc-megablast \
   -outfmt '10 std qlen slen' \
@@ -80,7 +86,7 @@ Tanoak to Oak
 
 ```{bash}
 cd ../input/blast
-time blastp -query PanGenome_ONT_pilon.all.maker.proteins.fasta \
+time blastp -query 12_21_tanoak_aa.fa \
   -db Qrob_PM1N_CDS_aa_20161004.fa \
   -outfmt '10 std qlen slen' \
   -max_target_seqs 5 \
@@ -95,7 +101,7 @@ Oak to Tanoak
 ```{bash}
 cd ../input/blast
 time blastp -query Qrob_PM1N_CDS_aa_20161004.fa \
-  -db PanGenome_ONT_pilon.all.maker.proteins.fasta  \
+  -db 12_21_tanoak_aa.fa  \
   -outfmt '10 std qlen slen' \
   -max_target_seqs 5 \
   -max_hsps 1 \
