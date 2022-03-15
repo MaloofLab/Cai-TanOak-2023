@@ -1,7 +1,7 @@
 ---
-title: "Filter BLAST TanOak and Oak"
+title: "Filter BLAST TanOak-Oak and Export FASTA"
 author: "Paulo Magalang"
-date: "7/28/2021"
+date: "3/7/2022"
 output: html_document
 ---
 
@@ -54,10 +54,7 @@ oak_v_tanoak_blastp <- read_csv("../output/Oak_to_Tanoak_blastp.csv",
                                    "E",
                                    "Score"))
 
-# take a look
 head(oak_v_tanoak_blastp, 15)
-# looks like there are two extra unknown columns but the other
-# values seem reasonable still. where to find blastp output format just in case?
 ```
 
 ```{r}
@@ -80,16 +77,6 @@ oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>% mutate(E_diff=log10(E)-log10(next
 
 head(tanoak_v_oak_blastp, 100)
 ```
-
-```{r}
-# hard to see any results with the entire dataset; messing around with a subset
-#tanoak_v_oak_blastp[1:1000, ] %>% 
-#  arrange(query_id, E) %>% 
-#  group_by(query_id) %>% 
-#  mutate(nextE = lead(E)) %>%
-#  ungroup()
-```
-
 
 ```{r}
 # find best hits in both directions
@@ -117,6 +104,8 @@ tanoak_blastp_recip <- left_join(tanoak_v_oak_blastp_best, oak_v_tanoak_blastp_b
 
 head(tanoak_blastp_recip,10)
 dim(tanoak_blastp_recip)
+
+# 31081 total hits
 ```
 
 ```{r}
@@ -127,6 +116,8 @@ tanoak_blastp_ortho <- tanoak_blastp_recip %>%
 # gut check
 head(tanoak_blastp_ortho)
 dim(tanoak_blastp_ortho)
+
+# 8649 hits post filtering (27.8% data retained)
 ```
 
 
@@ -216,6 +207,8 @@ tanoak_dcmega_recip <- left_join(tanoak_v_oak_dcmega_best, oak_v_tanoak_dcmega_b
 
 head(tanoak_dcmega_recip,10)
 dim(tanoak_dcmega_recip)
+
+# 29579 total hits
 ```
 
 ```{r}
@@ -226,6 +219,8 @@ tanoak_dcmega_ortho <- tanoak_dcmega_recip %>%
 # gut check
 head(tanoak_dcmega_ortho)
 dim(tanoak_dcmega_ortho)
+
+# 6095 post filtering (20.6% data retained)
 ```
 
 
@@ -234,20 +229,21 @@ dim(tanoak_dcmega_ortho)
 
 
 
-### Export each ortholog pair into a fasta file
+### Export each ortholog pair into separate fasta files
 
 ```{r}
 # cleanup, delete everything except for ortholog pairs
 rm(list = setdiff(ls(), c("tanoak_blastp_ortho", "tanoak_dcmega_ortho")))
 gc()
 ```
+
 ```{r}
 getwd()
 ```
 
 ```{r}
 # load in fasta files
-tanoak_fasta <- readDNAStringSet("../input/blast/PanGenome_ONT_pilon.all.maker.transcripts.fasta")
+tanoak_fasta <- readDNAStringSet("../input/blast/12_21_tanoak_CDS.fa")
 oak_fasta <- readDNAStringSet("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa")
 
 # put them into one object
@@ -269,22 +265,18 @@ tanoak_dcmega_ortho <- tanoak_dcmega_ortho %>%
   mutate(filepath = paste0("../output/ortho/dcmegablast/raw_seqs/", query_id, "--", subject_id, ".fasta"))
 
 head(tanoak_blastp_ortho)
-
-
-# filepath needs to be updated to ../output/ortho/blastp/raw_seqs/
-# bash one liner just in case filenames are off
-# for file in *.fasta; do mv "$file" "${file#raw_seqs}"; done
 ```
 
 ```{r}
-# generate inital 1000 fasta files for exploration
+# generate fasta files for blastp results
 
 # for each row in the table,
 #   find the sequence data in seqs for query and subject IDs
 #   put DNAstrings into a DNAStringSet object
 #   export using the filename at the given index
+
 system.time(
-for (i in seq(1, 1000)) {
+for (i in seq(1, dim(tanoak_blastp_ortho)[1])) {
   # get ID names
   tanoak_id <- tanoak_blastp_ortho[i, ]$query_id
   oak_id <- tanoak_blastp_ortho[i, ]$subject_id
@@ -298,40 +290,15 @@ for (i in seq(1, 1000)) {
   writeXStringSet(x = ortho_pair, filepath = path)
 })
 
-# ~3.5 minutes to generate 1000 fasta files
+# ~2 min runtime
 ```
 
 
 ```{r}
-# generate the rest for blastp
-
-# for each row in the table,
-#   find the sequence data in seqs for query and subject IDs
-#   put DNAstrings into a DNAStringSet object
-#   export using the filename at the given index
-system.time(
-for (i in seq(1001, 7638)) {
-  # get ID names
-  tanoak_id <- tanoak_blastp_ortho[i, ]$query_id
-  oak_id <- tanoak_blastp_ortho[i, ]$subject_id
-  path <- tanoak_blastp_ortho[i, ]$filepath
-  
-  # get sequence data
-  ids <- c(tanoak_id, oak_id)
-  ortho_pair <- seqs[ids]
-  
-  # export as a fasta file
-  writeXStringSet(x = ortho_pair, filepath = path)
-})
-
-# ~8 minutes to generate the rest
-```
-
-```{r}
-# generate fasta files for dcmegablast
+# generate fasta files for dcmegablast results
 
 system.time(
-for (i in seq(1, 5336)) {
+for (i in seq(1, dim(tanoak_dcmega_ortho)[1])) {
   # get ID names
   tanoak_id <- tanoak_dcmega_ortho[i, ]$query_id
   oak_id <- tanoak_dcmega_ortho[i, ]$subject_id
@@ -345,7 +312,7 @@ for (i in seq(1, 5336)) {
   writeXStringSet(x = ortho_pair, filepath = path)
 })
 
-# 6 mins to run
+# ~1min runtime
 ```
 
 
