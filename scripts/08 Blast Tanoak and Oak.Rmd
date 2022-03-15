@@ -26,7 +26,7 @@ if(!file.exists("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa.gz")) {
 
 ## create fasta files
 ```{bash, eval=FALSE}
- gffread -g PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta -x 12_21_tanoak_CDS.fa -y 12_21_tanoak_aa.fa 12_21_tanoak_cds.gff
+ gffread -g PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta -x 12_21_tanoak_CDS_v2.fa -y 12_21_tanoak_aav_2.fa v4draft.maker.repeatlib.noseq.gff
 ```
 
 
