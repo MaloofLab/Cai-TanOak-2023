@@ -1,7 +1,7 @@
 ---
 title: "Calculate dn/ds"
 author: "Paulo Magalang"
-date: "8/18/2021"
+date: "3/8/2022"
 output: html_document
 ---
 
@@ -23,7 +23,7 @@ library(stringr)
 
 ```{bash, eval = FALSE}
 # ! character from alignment software cannot be handled by ape when loading in fasta file, causing unequal
-# sequence lengths, might have to convert those characters to '-' in all files
+# sequence lengths, need to convert those characters to '-' in all files
 
 
 # replace ! with - in fasta files in the current directory
@@ -36,7 +36,7 @@ grep -Rl '!' . | xargs sed -i 's/!/-/g'
 # what is the output going to look like? what would be useful/helpful?
 
 # file setup
-path_prefix <- "../output/ortho/blastp/aligned_seqs/nt/"
+path_prefix <- "../output/ortho/blastp_ortholog/aligned_seqs/nt/"
 
 files <- list.files(path_prefix)
 total <- list.files(path_prefix) %>% length()
@@ -62,7 +62,7 @@ for (i in 1:total) {
   
   # get gene names
   tanoak <- str_replace(files[i], "--.*", "")
-  oak <- str_replace(files[i], ".*--(.*).fasta.out_nt", "\\1")
+  oak <- str_replace(files[i], ".*--(.*).nt.fasta", "\\1")
   
   # add to dataframe
   blastp_dnds[i, ] = c(tanoak, oak, dnds_ratio)
@@ -75,7 +75,7 @@ for (i in 1:total) {
 blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
 blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
 blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
-blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] # gap in the beginning of one sequence and sequences are identical
+blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] 
 ```
 
 ```{r}
@@ -99,13 +99,14 @@ head(blastp_dnds)
 
 ```{r}
 blastp_dnds_annot <- left_join(blastp_dnds, interpro, by=c("tanoak"="protein_accession")) %>%
-  select(tanoak, dnds_ratio, signature_description, interpro_description, GO_annotation) %>%
+  dplyr::select(tanoak, dnds_ratio, signature_description, interpro_description, GO_annotation) %>%
   distinct() %>%
   arrange(desc(dnds_ratio))
 blastp_dnds_annot
 ```
 
 ```{r}
+# get all GO annotations, signature desc, and interpro desc that are associated for each protein accession
 blastp_dnds_annot_cleaned <- blastp_dnds_annot %>% group_by(tanoak) %>%
     summarize(dnds = dnds_ratio,
               GO_annotations = paste0(unique(GO_annotation), collapse = "|"),
@@ -130,7 +131,7 @@ for (i in 1:length(go_annot)) {
     blastp_dnds_annot_cleaned$GO_annotations[i] <- NA
   }
   else {
-    blastp_dnds_annot_cleaned$GO_annotations[i] <- go_annot[[i]] %>% unique() %>% paste0(collapse = "|")
+    blastp_dnds_annot_cleaned$GO_annotations[i] <- go_annot[[i]] %>% unique() %>% paste0(collapse = "|") # save unique GO terms
   }
 }
 
@@ -152,6 +153,14 @@ blastp_dnds_annot_cleaned
 
 
 ## exploring strange outputs
+
+```{r}
+# strange cases
+blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
+blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
+blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] 
+```
 
 ```{bash, eval = FALSE}
 # check to see if sequences in a fasta file are the same

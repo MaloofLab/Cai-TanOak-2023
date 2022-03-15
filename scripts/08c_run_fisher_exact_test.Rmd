@@ -1,7 +1,7 @@
 ---
 title: "dn/ds Fisher's Exact"
 author: "Paulo Magalang"
-date: "10/8/2021"
+date: "3/9/2022"
 output: html_document
 ---
 
@@ -16,9 +16,14 @@ library(dplyr)
 ```{r}
 # load in data
 blastp_dnds <- read_tsv(file = "../output/TanOak_blastp_orthologs_dnds.tsv")
-blastp_dnds_filtered <- blastp_dnds %>% filter(!is.nan(dnds), !is.na(dnds), !is.infinite(dnds), dnds >= 0, !is.na(GO_annotations)) # 7368 to 5039 after filtering step
+blastp_dnds_filtered <- blastp_dnds %>% filter(!is.nan(dnds), !is.na(dnds), !is.infinite(dnds), dnds >= 0, !is.na(GO_annotations)) 
+
+dim(blastp_dnds)
+dim(blastp_dnds_filtered)
+```
 
 
+```{r}
 # map genes to each GO term
 # take entire column of GO terms and vectorize, filter out duplicate terms
 all_go_terms <- str_extract_all(blastp_dnds_filtered$GO_annotations, "GO:[0-9]*") %>% unlist() %>% unique()
