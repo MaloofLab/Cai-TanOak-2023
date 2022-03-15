@@ -14,75 +14,53 @@ unzip snpEff_latest_core.zip
 cp -s snpEff/snpEff.jar
 ```
 
-## Check gff files
-
-### MD5 
-
-From Ying
-c320cdf3660b19f771cc05ae4c36640c  PanGenome_ONT_pilon.all.maker_functional_blast.Qrob_PM1N.gff
-
-ce1ddc23a477c3b59a8fde5ced8c1bd0  PanGenome_ONT_pilon.all.maker_functional_blast.uniprot.gff
-
-Check ours
-
-```{r}
-tools::md5sum("/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.all.maker_functional_blast.Qrob_PM1N.gff") == "c320cdf3660b19f771cc05ae4c36640c"
-```
-
-```{r}
-tools::md5sum("/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.all.maker_functional_blast.uniprot.gff") == "ce1ddc23a477c3b59a8fde5ced8c1bd0"
-```
 
 ### Number of genes
 
 ```{bash}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak/"
-echo "gene: " $(grep -c "\sgene\s" PanGenome_ONT_pilon.all.maker_functional_blast.Qrob_PM1N.gff)
+cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
+echo "gene: " $(grep -c "\sgene\s" v4draft.maker.repeatlib.noseq.gff)
 
-echo "CDS: " $(grep -c "\sCDS\s" PanGenome_ONT_pilon.all.maker_functional_blast.Qrob_PM1N.gff)
+echo "CDS: " $(grep -c "\sCDS\s" v4draft.maker.repeatlib.noseq.gff)
 
-echo "mRNA: " $(grep -c "\smRNA\s" PanGenome_ONT_pilon.all.maker_functional_blast.Qrob_PM1N.gff)
+echo "mRNA: " $(grep -c "\smRNA\s" v4draft.maker.repeatlib.noseq.gff)
 ```
+
+
 ```{bash}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak/"
-echo "gene: " $(grep -c "\sgene\s" PanGenome_ONT_pilon.all.maker_functional_blast.uniprot.gff)
+cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
+echo "gene: " $(grep -c "\sgene\s" 12_21_tanoak_gene.gff)
 
-echo "CDS: " $(grep -c "\sCDS\s" PanGenome_ONT_pilon.all.maker_functional_blast.uniprot.gff)
-
-echo "mRNA: " $(grep -c "\smRNA\s" PanGenome_ONT_pilon.all.maker_functional_blast.uniprot.gff)
+echo "CDS: " $(grep -c "\sCDS\s" 12_21_tanoak_cds.gff)
 ```
-
-Looking at the gene descriptons, the uniprot are easier to parse, will go with those.
 
 ## build genome index
 
-note that `PanGenome_ONT_pilon.all.maker_functional_blast.gene.gff` is blasted against UniProt and `PanGenome_ONT_pilon.all.maker_functional_blast.gene2.gff` is blasted against oak data, protein-coding sequences predicted on PM1N.  But these have the same structural annotation, so I should be able to start from one and bring in the annotation from the other.
-
 set up directories and update snpEff.config file
 ```{bash, eval=FALSE}
-echo "tanoak.v1.genome : Tanoak" >> /usr/local/bin/snpEff/snpEff.config
+echo "tanoak.v1221.genome : Tanoak" >> /usr/local/bin/snpEff/snpEff.config
 
 mkdir /usr/local/bin/snpEff/data
-mkdir /usr/local/bin/snpEff/data/tanoak.v1
+mkdir /usr/local/bin/snpEff/data/tanoak.v1221
 ```
 
 
 ```{bash, eval=FALSE}
-cd /usr/local/bin/snpEff/data/tanoak.v1
+cd /usr/local/bin/snpEff/data/tanoak.v1221
 
-gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/PanGenome_ONT_pilon.fasta > tanoak.v1.fa.gz
+gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta > tanoak.v1221.fa.gz
 
-gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/PanGenome_ONT_pilon.all.maker_functional_blast.uniprot.gff > genes.gff.gz
+gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/v4draft.maker.repeatlib.noseq.gff > genes.gff.gz
 
 cd /usr/local/bin/snpEff
-java -jar snpEff.jar build -gff3 -v tanoak.v1
+java -jar snpEff.jar build -gff3 -v tanoak.v1221
 ```
 
 
 check it
 ```{bash, eval=FALSE}
 cd /usr/local/bin/snpEff
-java -jar snpEff.jar dump   tanoak.v1  | head -n 40
+java -jar snpEff.jar dump   tanoak.v1221  | head -n 40
 ```
 
 ## run annotation
@@ -90,11 +68,11 @@ java -jar snpEff.jar dump   tanoak.v1  | head -n 40
 ```{bash, eval=FALSE}
 cd ~/git/TanOak/output
 
-time java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1 /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.vcf.gz > /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.snpEff.vcf
+time java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1221 /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.genotyped.vcf.gz > /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.genotyped.snpEff.vcf
 
-gzip /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.snpEff.vcf
+gzip /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.genotyped.snpEff.vcf
 
-ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/cohort.genotyped.snpEff.vcf.gz ./
+ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.genotyped.snpEff.vcf.gz ./
 
 ```
 
