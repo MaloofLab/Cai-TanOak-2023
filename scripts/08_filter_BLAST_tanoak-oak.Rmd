@@ -258,11 +258,11 @@ names(seqs) <- names(seqs) %>%
 # prep filenames
 tanoak_blastp_ortho <- tanoak_blastp_ortho %>%
   select(query_id, subject_id) %>%
-  mutate(filepath = paste0("../output/ortho/blastp/raw_seqs/", query_id, "--", subject_id, ".fasta"))
+  mutate(filepath = paste0("../output/ortho/blastp_ortholog/raw_seqs/", query_id, "--", subject_id, ".fasta"))
 
 tanoak_dcmega_ortho <- tanoak_dcmega_ortho %>%
   select(query_id, subject_id) %>%
-  mutate(filepath = paste0("../output/ortho/dcmegablast/raw_seqs/", query_id, "--", subject_id, ".fasta"))
+  mutate(filepath = paste0("../output/ortho/dcmega_ortholog/raw_seqs/", query_id, "--", subject_id, ".fasta"))
 
 head(tanoak_blastp_ortho)
 ```
@@ -290,7 +290,7 @@ for (i in seq(1, dim(tanoak_blastp_ortho)[1])) {
   writeXStringSet(x = ortho_pair, filepath = path)
 })
 
-# ~2 min runtime
+# ~7 min runtime
 ```
 
 
@@ -312,7 +312,7 @@ for (i in seq(1, dim(tanoak_dcmega_ortho)[1])) {
   writeXStringSet(x = ortho_pair, filepath = path)
 })
 
-# ~1min runtime
+# ~5min runtime
 ```
 
 
