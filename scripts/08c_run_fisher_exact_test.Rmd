@@ -1,7 +1,7 @@
 ---
 title: "dn/ds Fisher's Exact"
 author: "Paulo Magalang"
-date: "3/9/2022"
+date: "3/31/2022"
 output: html_document
 ---
 
@@ -22,6 +22,21 @@ dim(blastp_dnds)
 dim(blastp_dnds_filtered)
 ```
 
+```{r}
+# top 2.5% of genes have dn/ds >= 1.43
+# top 5% of genes have dn/ds >= 1.11
+
+# bottom 5% of genes have dn/ds <= 0.0876
+
+blastp_dnds_filtered %>% ggplot(aes(x = dnds)) + geom_histogram(bins = 200) + 
+  geom_vline(xintercept = 0.0876, color = "red") + geom_vline(xintercept = 1.43, color = "red")
+```
+
+```{r}
+#blastp_dnds_filtered %>% ggplot(aes(x = sqrt(dnds))) + geom_histogram(bins = 200) +
+#  geom_vline(xintercept = sqrt(0.0876), color = "red") + geom_vline(xintercept = sqrt(1.11), color = "red")
+```
+
 
 ```{r}
 # map genes to each GO term
@@ -39,8 +54,9 @@ for (i in 1:dim(gene_sets)[1]) {
 }
 ```
 
-
 ```{r}
+# perform fisher's exact test on top 2.5% of genes
+
 p_values <- rep(0, dim(gene_sets)[1])
 
 for (i in 1:dim(gene_sets)[1]) { # for each GO term
@@ -52,8 +68,8 @@ for (i in 1:dim(gene_sets)[1]) { # for each GO term
     gene <- blastp_dnds_filtered$tanoak[j]
     is_in_gene_set <- gene_sets$genes[i] %>% str_detect(gene)
     
-    # determine if the jth gene has a "high" dn/ds ratio (upper cutoff at >= 1.35)
-    is_high_dnds <- blastp_dnds_filtered$dnds[j] >= 1.35
+    # determine if the jth gene has a "high" dn/ds ratio (take top 2.5% of genes, at dn/ds >= ~1.43)
+    is_high_dnds <- blastp_dnds_filtered$dnds[j] >= 1.43
     
     # add to contingency table
     if (is_in_gene_set) {
@@ -90,11 +106,68 @@ for (i in 1:dim(gene_sets)[1]) { # for each GO term
   
 }
 
-gene_sets <- gene_sets %>% mutate(p.value_high_dnds_unadjusted = p_values)
+gene_sets <- gene_sets %>% mutate(p.value_top2.5pct_dnds_unadjusted = p_values)
+```
+
+```{r}
+# perform fisher's exact test on top 5% of genes
+
+p_values <- rep(0, dim(gene_sets)[1])
+
+for (i in 1:dim(gene_sets)[1]) { # for each GO term
+  # initialize contingency table
+  cont_table <- matrix(0, 2, 2)
+  
+  for (j in 1:dim(blastp_dnds_filtered)[1]) { # for each gene
+    # determine if the jth gene corresponds to the ith GO term
+    gene <- blastp_dnds_filtered$tanoak[j]
+    is_in_gene_set <- gene_sets$genes[i] %>% str_detect(gene)
+    
+    # determine if the jth gene has a "high" dn/ds ratio (take top 5% of genes, at dn/ds >= ~1.11)
+    is_high_dnds <- blastp_dnds_filtered$dnds[j] >= 1.11
+    
+    # add to contingency table
+    if (is_in_gene_set) {
+      if (is_high_dnds) {
+        count <- cont_table[1, 1]
+        count <- count + 1
+        cont_table[1, 1] <- count
+      }
+      else if (!is_high_dnds) {
+        count <- cont_table[2, 1]
+        count <- count + 1
+        cont_table[2, 1] <- count
+      }
+    }
+    else {
+      if (is_high_dnds) {
+        count <- cont_table[1, 2]
+        count <- count + 1
+        cont_table[1, 2] <- count
+      }
+      else if (!is_high_dnds) {
+        count <- cont_table[2, 2]
+        count <- count + 1
+        cont_table[2, 2] <- count
+      }
+    }
+  }
+  
+  # perform fisher's exact test
+  test <- fisher.test(cont_table)
+  
+  # store unadjusted p-value
+  p_values[i] <- test$p.value
+  
+}
+
+gene_sets <- gene_sets %>% mutate(p.value_top5pct_dnds_unadjusted = p_values)
 ```
 
 
 ```{r}
+# perform fisher's exact test on bottom 5%
+
 p_values <- rep(0, dim(gene_sets)[1])
 
 for (i in 1:dim(gene_sets)[1]) { # for each GO term
@@ -106,8 +179,8 @@ for (i in 1:dim(gene_sets)[1]) { # for each GO term
     gene <- blastp_dnds_filtered$tanoak[j]
     is_in_gene_set <- gene_sets$genes[i] %>% str_detect(gene)
     
-    # determine if the jth gene has a "low" dn/ds ratio (lower cutoff at <= 0.15)
-    is_high_dnds <- blastp_dnds_filtered$dnds[j] <= 0.15
+    # determine if the jth gene has a "low" dn/ds ratio (take bottom 5% of genes, at dn/ds <= 0.0876)
+    is_high_dnds <- blastp_dnds_filtered$dnds[j] <= 0.0876
     
     # add to contingency table
     if (is_in_gene_set) {
@@ -144,11 +217,12 @@ for (i in 1:dim(gene_sets)[1]) { # for each GO term
   
 }
 
-gene_sets <- gene_sets %>% mutate(p.value_low_dnds_unadjusted = p_values)
+gene_sets <- gene_sets %>% mutate(p.value_bottom5pct_dnds_unadjusted = p_values)
 
 # adjust for multiple testing
-gene_sets <- gene_sets %>% mutate(fdr.low_dnds = p.adjust(gene_sets$p.value_low_dnds_unadjusted, method = "fdr"),
-                                  fdr.high_dnds = p.adjust(gene_sets$p.value_high_dnds_unadjusted, method = "fdr"))
+gene_sets <- gene_sets %>% mutate(fdr.bottom5pct_dnds = p.adjust(gene_sets$p.value_bottom5pct_dnds_unadjusted, method = "fdr"),
+                                  fdr.top5pct_dnds = p.adjust(gene_sets$p.value_top5pct_dnds_unadjusted, method = "fdr"),
+                                  fdr.top2.5pct_dnds = p.adjust(gene_sets$p.value_top2.5pct_dnds_unadjusted, method = "fdr"))
   
 ```
 
@@ -164,22 +238,38 @@ gene_sets_desc <- left_join(gene_sets, goterms_table, by=c("all_go_terms"="GO_te
 
 ```{r}
 # prep for export
-gene_sets_desc_lowdnds <- gene_sets_desc %>% arrange(fdr.low_dnds) %>%
-  dplyr::select(all_go_terms, GO_desc, p.value_low_dnds_unadjusted, fdr.low_dnds, genes)
+gene_sets_desc_bottom5pct_dnds <- gene_sets_desc %>% arrange(fdr.bottom5pct_dnds) %>%
+  dplyr::select(all_go_terms, GO_desc, p.value_bottom5pct_dnds_unadjusted, fdr.bottom5pct_dnds, genes)
 
-names(gene_sets_desc_lowdnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
+names(gene_sets_desc_bottom5pct_dnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
 
-gene_sets_desc_highdnds <- gene_sets_desc %>% arrange(fdr.high_dnds) %>%
-  dplyr::select(all_go_terms, GO_desc, p.value_high_dnds_unadjusted, fdr.high_dnds, genes)
+gene_sets_desc_top5pct_dnds <- gene_sets_desc %>% arrange(fdr.top5pct_dnds) %>%
+  dplyr::select(all_go_terms, GO_desc, p.value_top5pct_dnds_unadjusted, fdr.top5pct_dnds, genes)
 
-names(gene_sets_desc_highdnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
+names(gene_sets_desc_top5pct_dnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
+
+gene_sets_desc_top2.5pct_dnds <- gene_sets_desc %>% arrange(fdr.top2.5pct_dnds) %>%
+  dplyr::select(all_go_terms, GO_desc, p.value_top2.5pct_dnds_unadjusted, fdr.top2.5pct_dnds, genes)
+
+names(gene_sets_desc_top2.5pct_dnds) <- c("GO_term", "GO_desc", "p_value", "FDR", "genes")
 ```
 
 ```{r}
-# export tables
-write.table(gene_sets_desc_lowdnds, file = "../output/TanOak_blastp_low_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+gene_sets_desc_bottom5pct_dnds
 
-write.table(gene_sets_desc_highdnds, file = "../output/TanOak_blastp_high_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+gene_sets_desc_top5pct_dnds
+
+gene_sets_desc_top2.5pct_dnds
+```
+
+
+```{r}
+# export tables
+write.table(gene_sets_desc_bottom5pct_dnds, file = "../output/TanOak_blastp_bottom5pct_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+
+write.table(gene_sets_desc_top5pct_dnds, file = "../output/TanOak_blastp_top5pct_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+
+write.table(gene_sets_desc_top2.5pct_dnds, file = "../output/TanOak_blastp_top2.5pct_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
 ```
 
 

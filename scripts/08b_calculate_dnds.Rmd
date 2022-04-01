@@ -80,12 +80,13 @@ blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ]
 
 ```{r}
 # load in interpro annotations
-interpro <- read_tsv("../output/PanGenome_ONT_V1_interpro.tsv",
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv",
                      col_names = c("protein_accession", "sequence_md5_digest", "sequence_length",
                                    "analysis", "signature_accession", "signature_description", "start_location",
                                    "stop_location", "score", "status", "date", "interpro_accession",
                                    "interpro_description", "GO_annotation", "pathways_annotation")
-                    )
+                    ) %>%
+  separate(col = date, into = c("date", "interpro_accession", "interpro_description", "GO_annotation", "pathways_annotation"), sep = '\t')
 
 # column names from https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html
 
@@ -140,7 +141,7 @@ blastp_dnds_annot_cleaned
 
 ```{r}
 # export (only run when needed)
-#write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
 ```
 
 
