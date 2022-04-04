@@ -28,7 +28,7 @@ export IPS_CONFIG_DIR=/share/malooflab/Julin/git/TanOak/ipr_config
 cd /share/malooflab/Julin/git/TanOak
 
 interproscan.sh --input input/blast/12_21_tanoak_aa.fa \
-  --output-file-base output/PanGenome_ONT_V1 \
+  --output-file-base output/12_21_tanoak_interpro \
   --goterms \
   --iprlookup \
   --pathways \
