@@ -25,9 +25,7 @@ cd /share/malooflab/Julin/git/TanOak/scripts
 
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
-firstLast=`sed "${SLURM_ARRAY_TASK_ID}q;d" ../input/contig_splits.txt`
-
-Rscript --no-save --no-restore 04bs_ParseSnpEffSNPsAll.R ${firstLast}
+Rscript --no-save --no-restore 04bs_ParseSnpEffSNPsAll.R ${SLURM_ARRAY_TASK_ID}
 
 end=`date +%s`
 runtime=$((end-start))
