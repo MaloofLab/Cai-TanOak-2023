@@ -10,7 +10,7 @@ The goal here is to find genes that have changes predicted to effect protein fun
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
 ```
 
 ```{r}
@@ -19,26 +19,36 @@ dir(datadir)
 
 Index the fasta file.  Only needs to be done once
 ```{bash, eval=FALSE}
-samtools faidx '/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.fasta'
+samtools faidx "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta"
 ```
 
+## filter
 
-
-## filter for variants of moderate or high effect
+### for variants of moderate or high effect
 
 ```{bash, eval=FALSE}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak"
+cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
 
-bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.genotyped.snpEff.vcf.gz > cohort.genotyped.snpEff.filtered.vcf.bgz
+bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.all.genotyped.snpEff.vcf.gz > cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
 
-tabix cohort.genotyped.snpEff.filtered.vcf.bgz
+tabix cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
 ```
 
-## make contig lengths file for those contigs remaining after filtering
+### to remove intergenic SNPs
+
+```{bash, eval=FALSE}
+cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
+
+bcftools convert --output-type z --exclude "INFO/ANN ~ 'intergenic_region'" cohort.all.genotyped.snpEff.vcf.gz > cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
+
+tabix cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
+```
+
+## make contig lengths file for those contigs remaining after moderate/high filtering
 
 ```{r}
 contig.lengths <-
-  system("bcftools view -h '/Volumes/GoogleDrive/Shared drives/TanOak/cohort.genotyped.snpEff.filtered.vcf.bgz' | grep contig", inter=TRUE) %>%
+  system("bcftools view -h '/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz' | grep contig", inter=TRUE) %>%
   as_tibble() %>%
   mutate(value=str_remove_all(value, "(##contig=<ID=)|(length=)|>")) %>%
   separate(value, into = c("name", "length"), sep=",", convert = TRUE )

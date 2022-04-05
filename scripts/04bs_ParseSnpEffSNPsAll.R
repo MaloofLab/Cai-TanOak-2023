@@ -12,22 +12,21 @@
 library(tidyverse)
 library(VariantAnnotation)
 
-datadir <- "../input/"
-outdir <- "../output/"
+datadir <- "../input"
+outdir <- "../output"
 
-first <- commandArgs(trailingOnly = TRUE)[1]
-last <- commandArgs(trailingOnly = TRUE)[2]
+taskID <- commandArgs(trailingOnly = TRUE)[1]
 
-cat("first: ", first, " last: ", last, "\n")
+cat("task: ", taskID, "\n")
 
-tab <- TabixFile(file.path(datadir, "cohort.genotyped.snpEff.vcf.bgz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.vcf.gz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
-## load contig lengths file 
-contig.lengths <- read_csv("../output/contigLengths.csv")
+## load contig splits file 
+contig.splits <- read_csv("../input/contig_splits.csv")
 
-contig.lengths_tab <- contig.lengths %>%
+contig.splits_tab <- contig.splits %>%
   filter(name %in% tab_seqnames)
 
 if(last > nrow(contig.lengths_tab)) last <- nrow(contig.lengths_tab)
