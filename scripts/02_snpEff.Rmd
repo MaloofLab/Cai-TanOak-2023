@@ -76,9 +76,14 @@ cd ~/git/TanOak/output
 
 time /usr/local/opt/openjdk/bin/java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1221 /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.vcf.gz > /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf
 
-gzip /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf
+cd /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly
+bcftools convert --output-type z cohort.all.genotyped.snpEff.vcf > cohort.all.genotyped.snpEff.vcf.bgz
+rm cohort.all.genotyped.snpEff.vcf
+tabix cohort.all.genotyped.snpEff.vcf.bgz
 
-ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.gz ./
+ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz ~/git/TanOak/output
+
+ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz.tbi ~/git/TanOak/output
 
 ```
 

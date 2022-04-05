@@ -1778,44 +1778,78 @@ cp -s snpEff/snpEff.jar</code></pre>
 <h3>Number of genes</h3>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuY2QgXCIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVwiXG5lY2hvIFwiZ2VuZTogXCIgJChncmVwIC1jIFwiXFxzZ2VuZVxcc1wiIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcblxuZWNobyBcIkNEUzogXCIgJChncmVwIC1jIFwiXFxzQ0RTXFxzXCIgdjRkcmFmdC5tYWtlci5yZXBlYXRsaWIubm9zZXEuZ2ZmKVxuXG5lY2hvIFwibVJOQTogXCIgJChncmVwIC1jIFwiXFxzbVJOQVxcc1wiIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcbmBgYCJ9 -->
-<pre class="bash"><code>cd &quot;/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly&quot;
-echo &quot;gene: &quot; $(grep -c &quot;\sgene\s&quot; v4draft.maker.repeatlib.noseq.gff)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuYGBgYmFzaFxuY2QgXFwvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVxcXG5lY2hvIFxcZ2VuZTogXFwgJChncmVwIC1jIFxcXFxzZ2VuZVxcc1xcIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcblxuZWNobyBcXENEUzogXFwgJChncmVwIC1jIFxcXFxzQ0RTXFxzXFwgdjRkcmFmdC5tYWtlci5yZXBlYXRsaWIubm9zZXEuZ2ZmKVxuXG5lY2hvIFxcbVJOQTogXFwgJChncmVwIC1jIFxcXFxzbVJOQVxcc1xcIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcbmBgYFxuYGBgIn0= -->
+<pre class="bash"><code>```bash
+cd \/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly\
+echo \gene: \ $(grep -c \\sgene\s\ v4draft.maker.repeatlib.noseq.gff)
 
-echo &quot;CDS: &quot; $(grep -c &quot;\sCDS\s&quot; v4draft.maker.repeatlib.noseq.gff)
+echo \CDS: \ $(grep -c \\sCDS\s\ v4draft.maker.repeatlib.noseq.gff)
 
-echo &quot;mRNA: &quot; $(grep -c &quot;\smRNA\s&quot; v4draft.maker.repeatlib.noseq.gff)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiZ2VuZTogIDMzMDM3XG5DRFM6ICAxNjQyMzZcbm1STkE6ICAzMzAzN1xuIn0= -->
-<pre><code>gene:  33037
-CDS:  164236
-mRNA:  33037</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuY2QgXCIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVwiXG5lY2hvIFwiZ2VuZTogXCIgJChncmVwIC1jIFwiXFxzZ2VuZVxcc1wiIDEyXzIxX3Rhbm9ha19nZW5lLmdmZilcblxuZWNobyBcIkNEUzogXCIgJChncmVwIC1jIFwiXFxzQ0RTXFxzXCIgMTJfMjFfdGFub2FrX2Nkcy5nZmYpXG5gYGAifQ== -->
-<pre class="bash"><code>cd &quot;/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly&quot;
-echo &quot;gene: &quot; $(grep -c &quot;\sgene\s&quot; 12_21_tanoak_gene.gff)
+echo \mRNA: \ $(grep -c \\smRNA\s\ v4draft.maker.repeatlib.noseq.gff)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
 
-echo &quot;CDS: &quot; $(grep -c &quot;\sCDS\s&quot; 12_21_tanoak_cds.gff)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiZ2VuZTogIDMzMDM3XG5DRFM6ICAxNjQyMzZcbiJ9 -->
-<pre><code>gene:  33037
-CDS:  164236</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-</div>
-<div id="build-genome-index" class="section level2">
-<h2>build genome index</h2>
-<p>set up directories and update snpEff.config file</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjpbImVjaG8gXCJ0YW5vYWsudjEyMjEuZ2Vub21lIDogVGFub2FrXCIgPj4gL3Vzci9sb2NhbC9iaW4vc25wRWZmL3NucEVmZi5jb25maWciLCIiLCJta2RpciAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYvZGF0YSIsIm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhL3Rhbm9hay52MTIyMSJdfQ== -->
-<pre class="r"><code>echo &quot;tanoak.v1221.genome : Tanoak&quot; &gt;&gt; /usr/local/bin/snpEff/snpEff.config
+&lt;!-- rnb-output-begin eyJkYXRhIjoiZ2VuZTogIDMzMDM3XG5DRFM6ICAxNjQyMzZcbm1STkE6ICAzMzAzN1xuIn0= --&gt;
+</code></pre>
+<p>gene: 33037 CDS: 164236 mRNA: 33037</p>
+<pre><code>
+
+
+&lt;!-- rnb-output-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuYGBgYmFzaFxuY2QgXFwvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVxcXG5lY2hvIFxcZ2VuZTogXFwgJChncmVwIC1jIFxcXFxzZ2VuZVxcc1xcIDEyXzIxX3Rhbm9ha19nZW5lLmdmZilcblxuZWNobyBcXENEUzogXFwgJChncmVwIC1jIFxcXFxzQ0RTXFxzXFwgMTJfMjFfdGFub2FrX2Nkcy5nZmYpXG5gYGBcbmBgYCJ9 --&gt;
+
+```bash
+```bash
+cd \/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly\
+echo \gene: \ $(grep -c \\sgene\s\ 12_21_tanoak_gene.gff)
+
+echo \CDS: \ $(grep -c \\sCDS\s\ 12_21_tanoak_cds.gff)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-output-begin eyJkYXRhIjoiZ2VuZTogIDMzMDM3XG5DRFM6ICAxNjQyMzZcbiJ9 --&gt;
+</code></pre>
+<p>gene: 33037 CDS: 164236</p>
+<pre><code>
+
+
+&lt;!-- rnb-output-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+## build genome index
+
+set up directories and update snpEff.config file
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjpbImVjaG8gXCJ0YW5vYWsudjEyMjEuZ2Vub21lIDogVGFub2FrXCIgPj4gL3Vzci9sb2NhbC9iaW4vc25wRWZmL3NucEVmZi5jb25maWciLCIiLCJta2RpciAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYvZGF0YSIsIm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhL3Rhbm9hay52MTIyMSJdfQ== --&gt;
+
+```r
+echo &quot;tanoak.v1221.genome : Tanoak&quot; &gt;&gt; /usr/local/bin/snpEff/snpEff.config
 
 mkdir /usr/local/bin/snpEff/data
 mkdir /usr/local/bin/snpEff/data/tanoak.v1221</code></pre>
@@ -1852,25 +1886,31 @@ cd /usr/local/bin/snpEff
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
+</div>
 <div id="run-annotation" class="section level2">
 <h2>run annotation</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjpbImNkIH4vZ2l0L1Rhbk9hay9vdXRwdXQiLCIiLCJ0aW1lIC91c3IvbG9jYWwvb3B0L29wZW5qZGsvYmluL2phdmEgLVhteDhnIC1qYXIgL3Vzci9sb2NhbC9iaW4vc25wRWZmLmphciB0YW5vYWsudjEyMjEgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS9jb2hvcnQuYWxsLmdlbm90eXBlZC52Y2YuZ3ogPiAvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWRcXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L2NvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YiLCIiLCJnemlwIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFxcIGRyaXZlcy9UYW5PYWsvbmV3XzEyXzIwMjFfYXNzZW1ibHkvY29ob3J0LmFsbC5nZW5vdHlwZWQuc25wRWZmLnZjZiIsIiIsImxuIC1zIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFxcIGRyaXZlcy9UYW5PYWsvbmV3XzEyXzIwMjFfYXNzZW1ibHkvY29ob3J0LmFsbC5nZW5vdHlwZWQuc25wRWZmLnZjZi5neiAuLyJdfQ== -->
+<!-- rnb-source-begin eyJkYXRhIjpbImNkIH4vZ2l0L1Rhbk9hay9vdXRwdXQiLCIiLCJ0aW1lIC91c3IvbG9jYWwvb3B0L29wZW5qZGsvYmluL2phdmEgLVhteDhnIC1qYXIgL3Vzci9sb2NhbC9iaW4vc25wRWZmLmphciB0YW5vYWsudjEyMjEgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS9jb2hvcnQuYWxsLmdlbm90eXBlZC52Y2YuZ3ogPiAvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWRcXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L2NvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YiLCIiLCJjZCAvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWRcXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5IiwiYmNmdG9vbHMgY29udmVydCAtLW91dHB1dC10eXBlIHogY29ob3J0LmFsbC5nZW5vdHlwZWQuc25wRWZmLnZjZiA+IGNvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YuYmd6Iiwicm0gY29ob3J0LmFsbC5nZW5vdHlwZWQuc25wRWZmLnZjZiIsInRhYml4IGNvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YuYmd6IiwiIiwibG4gLXMgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS9jb2hvcnQuYWxsLmdlbm90eXBlZC5zbnBFZmYudmNmLmJneiB+L2dpdC9UYW5PYWsvb3V0cHV0IiwiIiwibG4gLXMgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS9jb2hvcnQuYWxsLmdlbm90eXBlZC5zbnBFZmYudmNmLmJnei50Ymkgfi9naXQvVGFuT2FrL291dHB1dCJdfQ== -->
 <pre class="r"><code>cd ~/git/TanOak/output
 
 time /usr/local/opt/openjdk/bin/java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1221 /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.vcf.gz &gt; /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf
 
-gzip /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf
+cd /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly
+bcftools convert --output-type z cohort.all.genotyped.snpEff.vcf &gt; cohort.all.genotyped.snpEff.vcf.bgz
+rm cohort.all.genotyped.snpEff.vcf
+tabix cohort.all.genotyped.snpEff.vcf.bgz
 
-ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.gz ./</code></pre>
+ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz ~/git/TanOak/output
+
+ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz.tbi ~/git/TanOak/output</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiU05QZWZmIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgpUaGlzIGRvY3VtZW50cyB1c2luZyBbU05QZWZmXShodHRwczovL3BjaW5nb2xhLmdpdGh1Yi5pby9TbnBFZmYvKSB0byBhbm5vdGF0ZSBTTlBzIGluIFRhbk9hayB3aXRoIHRoZWlyIGZ1bmN0aW9uYWwgY29uc2VxdWVuY2VzLgoKIyMgSW5zdGFsbCBTTlBlZmYKCmBgYHtiYXNoLCBldmFsPUZBTFNFfQpjZCAvdXNyL2xvY2FsL2Jpbgp3Z2V0IGh0dHBzOi8vc25wZWZmLmJsb2IuY29yZS53aW5kb3dzLm5ldC92ZXJzaW9ucy9zbnBFZmZfbGF0ZXN0X2NvcmUuemlwCnVuemlwIHNucEVmZl9sYXRlc3RfY29yZS56aXAKY3AgLXMgc25wRWZmL3NucEVmZi5qYXIKYGBgCgoKIyMjIE51bWJlciBvZiBnZW5lcwoKYGBge2Jhc2h9CmNkICIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseSIKZWNobyAiZ2VuZTogIiAkKGdyZXAgLWMgIlxzZ2VuZVxzIiB2NGRyYWZ0Lm1ha2VyLnJlcGVhdGxpYi5ub3NlcS5nZmYpCgplY2hvICJDRFM6ICIgJChncmVwIC1jICJcc0NEU1xzIiB2NGRyYWZ0Lm1ha2VyLnJlcGVhdGxpYi5ub3NlcS5nZmYpCgplY2hvICJtUk5BOiAiICQoZ3JlcCAtYyAiXHNtUk5BXHMiIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZikKYGBgCgoKYGBge2Jhc2h9CmNkICIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseSIKZWNobyAiZ2VuZTogIiAkKGdyZXAgLWMgIlxzZ2VuZVxzIiAxMl8yMV90YW5vYWtfZ2VuZS5nZmYpCgplY2hvICJDRFM6ICIgJChncmVwIC1jICJcc0NEU1xzIiAxMl8yMV90YW5vYWtfY2RzLmdmZikKYGBgCgojIyBidWlsZCBnZW5vbWUgaW5kZXgKCnNldCB1cCBkaXJlY3RvcmllcyBhbmQgdXBkYXRlIHNucEVmZi5jb25maWcgZmlsZQpgYGB7YmFzaCwgZXZhbD1GQUxTRX0KZWNobyAidGFub2FrLnYxMjIxLmdlbm9tZSA6IFRhbm9hayIgPj4gL3Vzci9sb2NhbC9iaW4vc25wRWZmL3NucEVmZi5jb25maWcKCm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhCm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhL3Rhbm9hay52MTIyMQpgYGAKCgpgYGB7YmFzaCwgZXZhbD1GQUxTRX0KY2QgL3Vzci9sb2NhbC9iaW4vc25wRWZmL2RhdGEvZ2Vub21lcwoKI2d6aXAgLWMgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L1Bhbkdlbm9tZV9PTlRfcGlsb24ucHVyZ2UuZGVkdXA5MC5kcm9wMmsubWVyZ2VOLmZhc3RhID4gdGFub2FrLnYxMjIxLmZhLmd6CgpjZCAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYvZGF0YS90YW5vYWsudjEyMjEKCiNnemlwIC1jIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS92NGRyYWZ0Lm1ha2VyLnJlcGVhdGxpYi5ub3NlcS5nZmYgPiBnZW5lcy5nZmYuZ3oKCmNwIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS8xMl8yMV90YW5vYWtfQ0RTLmZhIGNkcy5mYQoKY3AgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5LzEyXzIxX3Rhbm9ha19hYS5mYSBwcm90ZWluLmZhCgpjZCAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYKL3Vzci9sb2NhbC9vcHQvb3Blbmpkay9iaW4vamF2YSAtamFyIHNucEVmZi5qYXIgYnVpbGQgLWdmZjMgLXYgdGFub2FrLnYxMjIxCmBgYAoKCmNoZWNrIGl0CmBgYHtiYXNoLCBldmFsPUZBTFNFfQpjZCAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYKL3Vzci9sb2NhbC9vcHQvb3Blbmpkay9iaW4vamF2YSAtamFyIHNucEVmZi5qYXIgZHVtcCB0YW5vYWsudjEyMjEgICB8IGhlYWQgLW4gNDAKYGBgCgojIyBydW4gYW5ub3RhdGlvbgoKYGBge2Jhc2gsIGV2YWw9RkFMU0V9CmNkIH4vZ2l0L1Rhbk9hay9vdXRwdXQKCnRpbWUgL3Vzci9sb2NhbC9vcHQvb3Blbmpkay9iaW4vamF2YSAtWG14OGcgLWphciAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYuamFyIHRhbm9hay52MTIyMSAvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWRcIGRyaXZlcy9UYW5PYWsvbmV3XzEyXzIwMjFfYXNzZW1ibHkvY29ob3J0LmFsbC5nZW5vdHlwZWQudmNmLmd6ID4gL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L2NvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YKCmd6aXAgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L2NvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YKCmxuIC1zIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS9jb2hvcnQuYWxsLmdlbm90eXBlZC5zbnBFZmYudmNmLmd6IC4vCgpgYGAKCgoK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiU05QZWZmIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgpUaGlzIGRvY3VtZW50cyB1c2luZyBbU05QZWZmXShodHRwczovL3BjaW5nb2xhLmdpdGh1Yi5pby9TbnBFZmYvKSB0byBhbm5vdGF0ZSBTTlBzIGluIFRhbk9hayB3aXRoIHRoZWlyIGZ1bmN0aW9uYWwgY29uc2VxdWVuY2VzLgoKIyMgSW5zdGFsbCBTTlBlZmYKCmBgYHtiYXNoLCBldmFsPUZBTFNFfQpjZCAvdXNyL2xvY2FsL2Jpbgp3Z2V0IGh0dHBzOi8vc25wZWZmLmJsb2IuY29yZS53aW5kb3dzLm5ldC92ZXJzaW9ucy9zbnBFZmZfbGF0ZXN0X2NvcmUuemlwCnVuemlwIHNucEVmZl9sYXRlc3RfY29yZS56aXAKY3AgLXMgc25wRWZmL3NucEVmZi5qYXIKYGBgCgoKIyMjIE51bWJlciBvZiBnZW5lcwoKYGBge2Jhc2h9CmNkICIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseSIKZWNobyAiZ2VuZTogIiAkKGdyZXAgLWMgIlxzZ2VuZVxzIiB2NGRyYWZ0Lm1ha2VyLnJlcGVhdGxpYi5ub3NlcS5nZmYpCgplY2hvICJDRFM6ICIgJChncmVwIC1jICJcc0NEU1xzIiB2NGRyYWZ0Lm1ha2VyLnJlcGVhdGxpYi5ub3NlcS5nZmYpCgplY2hvICJtUk5BOiAiICQoZ3JlcCAtYyAiXHNtUk5BXHMiIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZikKYGBgCgoKYGBge2Jhc2h9CmNkICIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseSIKZWNobyAiZ2VuZTogIiAkKGdyZXAgLWMgIlxzZ2VuZVxzIiAxMl8yMV90YW5vYWtfZ2VuZS5nZmYpCgplY2hvICJDRFM6ICIgJChncmVwIC1jICJcc0NEU1xzIiAxMl8yMV90YW5vYWtfY2RzLmdmZikKYGBgCgojIyBidWlsZCBnZW5vbWUgaW5kZXgKCnNldCB1cCBkaXJlY3RvcmllcyBhbmQgdXBkYXRlIHNucEVmZi5jb25maWcgZmlsZQpgYGB7YmFzaCwgZXZhbD1GQUxTRX0KZWNobyAidGFub2FrLnYxMjIxLmdlbm9tZSA6IFRhbm9hayIgPj4gL3Vzci9sb2NhbC9iaW4vc25wRWZmL3NucEVmZi5jb25maWcKCm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhCm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhL3Rhbm9hay52MTIyMQpgYGAKCgpgYGB7YmFzaCwgZXZhbD1GQUxTRX0KY2QgL3Vzci9sb2NhbC9iaW4vc25wRWZmL2RhdGEvZ2Vub21lcwoKI2d6aXAgLWMgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L1Bhbkdlbm9tZV9PTlRfcGlsb24ucHVyZ2UuZGVkdXA5MC5kcm9wMmsubWVyZ2VOLmZhc3RhID4gdGFub2FrLnYxMjIxLmZhLmd6CgpjZCAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYvZGF0YS90YW5vYWsudjEyMjEKCiNnemlwIC1jIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS92NGRyYWZ0Lm1ha2VyLnJlcGVhdGxpYi5ub3NlcS5nZmYgPiBnZW5lcy5nZmYuZ3oKCmNwIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS8xMl8yMV90YW5vYWtfQ0RTLmZhIGNkcy5mYQoKY3AgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5LzEyXzIxX3Rhbm9ha19hYS5mYSBwcm90ZWluLmZhCgpjZCAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYKL3Vzci9sb2NhbC9vcHQvb3Blbmpkay9iaW4vamF2YSAtamFyIHNucEVmZi5qYXIgYnVpbGQgLWdmZjMgLXYgdGFub2FrLnYxMjIxCmBgYAoKCmNoZWNrIGl0CmBgYHtiYXNoLCBldmFsPUZBTFNFfQpjZCAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYKL3Vzci9sb2NhbC9vcHQvb3Blbmpkay9iaW4vamF2YSAtamFyIHNucEVmZi5qYXIgZHVtcCB0YW5vYWsudjEyMjEgICB8IGhlYWQgLW4gNDAKYGBgCgojIyBydW4gYW5ub3RhdGlvbgoKYGBge2Jhc2gsIGV2YWw9RkFMU0V9CmNkIH4vZ2l0L1Rhbk9hay9vdXRwdXQKCnRpbWUgL3Vzci9sb2NhbC9vcHQvb3Blbmpkay9iaW4vamF2YSAtWG14OGcgLWphciAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYuamFyIHRhbm9hay52MTIyMSAvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWRcIGRyaXZlcy9UYW5PYWsvbmV3XzEyXzIwMjFfYXNzZW1ibHkvY29ob3J0LmFsbC5nZW5vdHlwZWQudmNmLmd6ID4gL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L2NvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YKCmNkIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseQpiY2Z0b29scyBjb252ZXJ0IC0tb3V0cHV0LXR5cGUgeiBjb2hvcnQuYWxsLmdlbm90eXBlZC5zbnBFZmYudmNmID4gY29ob3J0LmFsbC5nZW5vdHlwZWQuc25wRWZmLnZjZi5iZ3oKcm0gY29ob3J0LmFsbC5nZW5vdHlwZWQuc25wRWZmLnZjZgp0YWJpeCBjb2hvcnQuYWxsLmdlbm90eXBlZC5zbnBFZmYudmNmLmJnegoKbG4gLXMgL1ZvbHVtZXMvR29vZ2xlRHJpdmUvU2hhcmVkXCBkcml2ZXMvVGFuT2FrL25ld18xMl8yMDIxX2Fzc2VtYmx5L2NvaG9ydC5hbGwuZ2Vub3R5cGVkLnNucEVmZi52Y2YuYmd6IH4vZ2l0L1Rhbk9hay9vdXRwdXQKCmxuIC1zIC9Wb2x1bWVzL0dvb2dsZURyaXZlL1NoYXJlZFwgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseS9jb2hvcnQuYWxsLmdlbm90eXBlZC5zbnBFZmYudmNmLmJnei50Ymkgfi9naXQvVGFuT2FrL291dHB1dAoKYGBgCgoKCg==</div>
 
 
 
