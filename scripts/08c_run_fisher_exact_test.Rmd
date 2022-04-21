@@ -146,20 +146,34 @@ pvalues_FDR_transposed <- unadj_pvalues %>% pivot_longer(-bin, names_to = "GO_te
          `4.FDR` = p.adjust(`4`, method = "fdr"),
          `3.FDR` = p.adjust(`3`, method = "fdr"),
          `2.FDR` = p.adjust(`2`, method = "fdr"),
-         `1.FDR` = p.adjust(`1`, method = "fdr"))
+         `1.FDR` = p.adjust(`1`, method = "fdr"),
+         `5.Bon` = p.adjust(`5`, method = "bonferroni"),
+         `4.Bon` = p.adjust(`4`, method = "bonferroni"),
+         `3.Bon` = p.adjust(`3`, method = "bonferroni"),
+         `2.Bon` = p.adjust(`2`, method = "bonferroni"),
+         `1.Bon` = p.adjust(`1`, method = "bonferroni"))
 
 pvalues_FDR_transposed
 ```
 
 ```{r}
-is_significant <- function(FDR) {
-  FDR <= 0.25
+is_significant_FDR <- function(FDR) {
+  FDR <= 0.5
 }
 
 FDR_filtered <- pvalues_FDR_transposed %>% filter(if_any(contains(".FDR"), is_significant)) %>%
-  dplyr::select(contains("GO"), contains(".FDR"))
+  dplyr::select(contains("GO"), contains(".FDR")) %>%
+  mutate(GO_term_desc = str_c(GO_term, GO_desc, sep = "; "))
 FDR_filtered
+
+# str_c
+#FDR_filtered %>% mutate(GO_term_desc = str_c(GO_term, GO_desc, sep = "; "))
 ```
+
+```{r}
+getwd()
+```
+
 
 ```{r}
 # bin 1: dn/ds >= 1.2
@@ -168,14 +182,23 @@ FDR_filtered
 # bin 4: dn/ds >= 0.1 & dn/ds < 0.3
 # bin 5: dn/ds < 0.1
 
-colnames(FDR_filtered) <- c("GO_term", "GO_desc", "< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", ">= 1.2")
+colnames(FDR_filtered) <- c("GO_term", "GO_desc", "< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", ">= 1.2", "GO_term_desc")
 
 FDR_filtered %>% pivot_longer(-c(contains("GO")), names_to = "bins", values_to = "FDR") %>%
   mutate(bins = as.factor(bins)) %>%
+  mutate(FDR_cut = cut(FDR, c(0, 0.01, 0.05, 0.25, 0.5, 1), labels = c("<= 0.01", "0.01 - 0.05", "0.05 - 0.25", "0.25 - 0.5", "> 0.5"))) %>%
   ggplot(aes(x = factor(bins, levels = c("< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", ">= 1.2")), 
-                        y = GO_term, fill = cut(FDR, c(0, 0.01, 0.05, 0.25, 1)))) + geom_tile() +
+             y = GO_term_desc, fill = FDR_cut)) + geom_tile() +
   scale_fill_brewer(type = "seq", palette = "Greys", direction = -1) +
-  labs(x = "dn/ds bins", y = "", fill = "FDR")
+  labs(x = "dn/ds bins", y = "", fill = "FDR") +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))
+
+ggsave("../output/fisher_test_blastp_FDRcorrected.jpg")
+
+# ggsave to export plot
+
+# 1. run cut on original dataframe to generate new col, mutate w str_replace
+# 2. keep as is and add scale_fill_manual or scale_fill_discrete
 ```
 
 
