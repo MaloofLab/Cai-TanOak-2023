@@ -1,0 +1,100 @@
+---
+title: "09_Explore_dN_dS"
+author: "Julin Maloof"
+date: '2022-05-11'
+output: html_document
+---
+
+Goal is to look at the genes in the GO:0030247 Polysaccharide Binding and GO:0009055 Electron Transfer Activity categories with high dNdS.
+* What are their predicted functions
+* SNP polarity (does Tanoak or Oak have the ancesteral alleles?)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(org.At.tair.db)
+library(Biostrings)
+```
+
+## get data
+
+dn_ds data
+```{r}
+dn_ds <- read_csv("../output/gene_sets_dnds_long.csv")
+head(dn_ds)
+```
+
+annotation data
+```{r}
+Atblast <- read_csv("../output/TanOakVsA.t.blast_out.csv", col_names = str_split("genes AGI pident length mismatch gapopen qstart qend sstart send evalue bitscore", " ")[[1]])
+head(Atblast)
+```
+
+
+```{r}
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+head(interpro)
+```
+
+
+## Polysaccharide Binding
+
+Get the genes
+```{r}
+polysaccharide_genes <- dn_ds %>% filter(all_go_terms=="GO:0030247", dnds >= 1.2)
+polysaccharide_genes
+```
+
+interpro annotation
+
+```{r}
+poly.interpro <- interpro %>% 
+  dplyr::select(genes=X1, description=X6 ) %>% 
+  unique() %>% 
+  na.omit() %>% 
+  right_join(polysaccharide_genes, by="genes") %>%
+  group_by(genes) %>%
+  summarize(interpro.description = str_c(description, collapse="; "), dnds=unique(dnds))
+  
+poly.interpro
+```
+
+Arabidopsis best hit and gene symbols (if any)
+
+```{r}
+poly.at <- Atblast %>%
+  dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
+  right_join(poly.interpro) %>%
+  group_by(genes) %>%
+  slice_max(order_by=bitscore, n=1) %>%
+  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
+         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))) %>%
+  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything())
+
+poly.at
+```
+
+### Notes:
+
+* LRK10L2, 3 = LEAF RUST 10 DISEASE-RESISTANCE LOCUS RECEPTOR- LIKE PROTEIN KINASE-LIKE
+* ATL21 = ARABIDOPSIS TOXICOS EN LEVADURA 2 (ring, UBOX, E3?).  Note: does not fit with interpro description, wall associated kinase.
+* WAK2, WAK5, Wall associated kinase
+
+Let's blast a few of these.  First create fasta file of interesting proteins:
+
+```{r}
+peps <- readAAStringSet("../input/blast/12_21_tanoak_aa.fa")
+peps <- peps[polysaccharide_genes$genes]
+peps
+writeXStringSet(peps, "../output/polysaccharide_peps.fa")
+```
+
+
+Blast: many have hits to LRK10L
+
+
+
+
