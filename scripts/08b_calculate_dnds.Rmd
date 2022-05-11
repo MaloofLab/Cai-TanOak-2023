@@ -1,0 +1,185 @@
+---
+title: "Calculate dn/ds"
+author: "Paulo Magalang"
+date: "3/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# load in libraries
+library(tidyverse)
+library(Biostrings)
+library(ape)
+library(seqinr)
+library(stringr)
+```
+
+
+## blastp dn/ds calculations
+
+```{bash, eval = FALSE}
+# ! character from alignment software cannot be handled by ape when loading in fasta file, causing unequal
+# sequence lengths, need to convert those characters to '-' in all files
+
+
+# replace ! with - in fasta files in the current directory
+grep -Rl '!' . | xargs sed -i 's/!/-/g'
+
+```
+
+```{r}
+# for each output file, get the filepath, calculate dn/ds, save the value
+# what is the output going to look like? what would be useful/helpful?
+
+# file setup
+path_prefix <- "../output/ortho/blastp_ortholog/aligned_seqs/nt/"
+
+files <- list.files(path_prefix)
+total <- list.files(path_prefix) %>% length()
+
+# initialize empty dataframe
+blastp_dnds <- data.frame(matrix(0, ncol = 3, nrow = total))
+colnames(blastp_dnds) <- c("tanoak", "oak", "dnds_ratio")
+
+for (i in 1:total) {
+  # get file path
+  filename <- paste0(path_prefix, files[i])
+  
+  # load in fasta file
+  alignment <- read.dna(filename, format = "fasta")
+  dnds_ratio <- NA
+  
+  if(sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2]) { # check for unique sequences
+    # although if two sequenes have the same number of !'s in alignment, can calculate dn/ds for some reason
+    
+    # calculate dn/ds
+    dnds_ratio <- dnds(alignment, quiet = TRUE)
+  }
+  
+  # get gene names
+  tanoak <- str_replace(files[i], "--.*", "")
+  oak <- str_replace(files[i], ".*--(.*).nt.fasta", "\\1")
+  
+  # add to dataframe
+  blastp_dnds[i, ] = c(tanoak, oak, dnds_ratio)
+}
+
+```
+
+```{r}
+# strange cases
+blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
+blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
+blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] 
+```
+
+```{r}
+# load in interpro annotations
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv",
+                     col_names = c("protein_accession", "sequence_md5_digest", "sequence_length",
+                                   "analysis", "signature_accession", "signature_description", "start_location",
+                                   "stop_location", "score", "status", "date", "interpro_accession",
+                                   "interpro_description", "GO_annotation", "pathways_annotation")
+                    ) %>%
+  separate(col = date, into = c("date", "interpro_accession", "interpro_description", "GO_annotation", "pathways_annotation"), sep = '\t')
+
+# column names from https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html
+
+head(interpro, 13)
+```
+
+```{r}
+head(blastp_dnds)
+```
+
+
+```{r}
+blastp_dnds_annot <- left_join(blastp_dnds, interpro, by=c("tanoak"="protein_accession")) %>%
+  dplyr::select(tanoak, dnds_ratio, signature_description, interpro_description, GO_annotation) %>%
+  distinct() %>%
+  arrange(desc(dnds_ratio))
+blastp_dnds_annot
+```
+
+```{r}
+# get all GO annotations, signature desc, and interpro desc that are associated for each protein accession
+blastp_dnds_annot_cleaned <- blastp_dnds_annot %>% group_by(tanoak) %>%
+    summarize(dnds = dnds_ratio,
+              GO_annotations = paste0(unique(GO_annotation), collapse = "|"),
+              signature_descriptions = paste0(unique(signature_description), collapse = ", "),
+              interpro_descriptions = paste0(unique(interpro_description), collapse = ", ")) %>%
+  distinct() %>%
+  arrange(desc(dnds))
+  
+blastp_dnds_annot_cleaned
+```
+
+
+```{r}
+# clean up GO annotations
+
+# setup
+go_annot_raw <- blastp_dnds_annot_cleaned$GO_annotations
+go_annot <- str_extract_all(go_annot_raw, "GO:[0-9]*") # grab GO terms only
+
+for (i in 1:length(go_annot)) {
+  if(identical(go_annot[[i]], character(0))) {
+    blastp_dnds_annot_cleaned$GO_annotations[i] <- NA
+  }
+  else {
+    blastp_dnds_annot_cleaned$GO_annotations[i] <- go_annot[[i]] %>% unique() %>% paste0(collapse = "|") # save unique GO terms
+  }
+}
+
+blastp_dnds_annot_cleaned
+```
+
+```{r}
+# export (only run when needed)
+write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+## exploring strange outputs
+
+```{r}
+# strange cases
+blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
+blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
+blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] 
+```
+
+```{bash, eval = FALSE}
+# check to see if sequences in a fasta file are the same
+cat example_file.fasta | sort | uniq | wc -l
+
+# expect output to be 3 if there are two completely identical sequences
+# dn/ds values with NA are identical sequences
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
