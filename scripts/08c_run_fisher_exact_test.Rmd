@@ -48,6 +48,8 @@ gene_sets_long <- gene_sets %>% separate_rows(genes, sep = ",")
 gene_sets_dnds_long <- left_join(gene_sets_long, blastp_dnds_filtered, by = c("genes"="tanoak")) %>% 
   dplyr::select(all_go_terms, genes, dnds) %>% arrange(desc(dnds))
 gene_sets_dnds_long
+
+write_csv(gene_sets_dnds_long, "../output/gene_sets_dnds_long.csv")
 ```
 
 ```{r}
