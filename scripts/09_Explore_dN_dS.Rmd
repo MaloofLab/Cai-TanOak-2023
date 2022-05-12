@@ -96,5 +96,44 @@ writeXStringSet(peps, "../output/polysaccharide_peps.fa")
 Blast: many have hits to LRK10L
 
 
+## Electron Transfer
+
+Get the genes
+```{r}
+electron_xfer_genes <- dn_ds %>% filter(all_go_terms=="GO:0009055", dnds >= 1.2)
+electron_xfer_genes
+```
+
+interpro annotation
+
+```{r}
+e_xfer.interpro <- interpro %>% 
+  dplyr::select(genes=X1, description=X6 ) %>% 
+  unique() %>% 
+  na.omit() %>% 
+  right_join(electron_xfer_genes, by="genes") %>%
+  group_by(genes) %>%
+  summarize(interpro.description = str_c(description, collapse="; "), dnds=unique(dnds))
+  
+e_xfer.interpro
+```
+
+Arabidopsis best hit and gene symbols (if any)
+
+```{r}
+e_xfer.at <- Atblast %>%
+  dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
+  right_join(e_xfer.interpro) %>%
+  group_by(genes) %>%
+  slice_max(order_by=bitscore, n=1) %>%
+  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
+         AT.symbol = unlist(map(as.list(org.At.tairSYMBOL[AGI]), str_c, collapse="; "))) %>%
+  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything())
+
+e_xfer.at
+```
+
+### Notes:
+
 
 
