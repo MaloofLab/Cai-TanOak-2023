@@ -48,9 +48,9 @@ mkdir /usr/local/bin/snpEff/data/tanoak.v1221
 ```{bash, eval=FALSE}
 cd /usr/local/bin/snpEff/data/tanoak.v1221
 
-gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta > tanoak.v1221.fa.gz
+#gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta > tanoak.v1221.fa.gz
 
-gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/v4draft.maker.repeatlib.noseq.gff > genes.gff.gz
+#gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/v4draft.maker.repeatlib.noseq.gff > genes.gff.gz
 
 cd /usr/local/bin/snpEff
 java -jar snpEff.jar build -gff3 -v tanoak.v1221
