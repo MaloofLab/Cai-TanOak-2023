@@ -1,0 +1,40 @@
+---
+title: "Blast to Arabidopsis"
+output: html_notebook
+---
+
+Quickie annotation by blasting TanOak to Arabidopsis
+
+```{r}
+library(tidyverse)
+```
+
+
+```{bash}
+cd ../input
+wget https://www.arabidopsis.org/download_files/Sequences/TAIR10_blastsets/TAIR10_pep_20110103_representative_gene_model_updated
+mv TAIR10_pep_20110103_representative_gene_model_updated TAIR10_pep_20110103_representative_gene_model_updated.fa
+```
+
+```{bash, eval=FALSE}
+cd ../input
+makeblastdb -in TAIR10_pep_20110103_representative_gene_model_updated.fa -dbtype prot
+```
+
+
+```{bash, eval=FALSE}
+
+cd ../output
+
+blastp -query ../input/blast/12_21_tanoak_aa.fa \
+  -db ../input/TAIR10_pep_20110103_representative_gene_model_updated.fa \
+  -outfmt 10 \
+  -evalue 10e-3 \
+  -num_threads 3 \
+  -culling_limit 2 \
+  -max_target_seqs 5 \
+  -out TanOakVsA.t.blast_out.csv
+```
+
+
+
