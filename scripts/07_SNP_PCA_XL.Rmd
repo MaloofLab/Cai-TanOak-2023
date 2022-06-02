@@ -119,7 +119,7 @@ gc()
 ```
 
 ```{r}
-save(results, "../output/XL_PCA_resutls.Rdata")
+save(results, "../output/XL_PCA_results.Rdata")
 ```
 
 

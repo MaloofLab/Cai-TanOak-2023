@@ -5,20 +5,5 @@ output: html_notebook
 
 Want to run interpro scan to get GO terms, etc.
 
-### Check MD5 sums:
 
-```{r}
-tools::md5sum("/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.all.maker.proteins.fasta") == "12bc52b5b14e317c75816a7ccb33816a"
-```
-
-```{r}
-tools::md5sum("/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.all.maker.transcripts.fasta") == "b99597330a9ffe41ba37d4fb8764b71d"
-```
-
-```{r, eval=FALSE}
-file.copy("/Volumes/GoogleDrive/Shared drives/TanOak/PanGenome_ONT_pilon.all.maker.proteins.fasta", "../input/")
-
-R.utils::gzip("../input/PanGenome_ONT_pilon.all.maker.proteins.fasta")
-```
-
-Then run on cluster, see `interproscan.slurm`
+Run on cluster, see `interproscan.slurm`
