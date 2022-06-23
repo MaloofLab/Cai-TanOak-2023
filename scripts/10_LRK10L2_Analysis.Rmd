@@ -1,0 +1,9 @@
+---
+title: "Explore Polysaccharide Binding"
+output: html_notebook
+---
+
+Many of the TanOak genes coming up with high dN/dS in the polysaccharide binding category are LRK10L2 homologs.  The goal here is to align the TanOak paralogs with other related orthlogs, build a tree, and see where changes are happening.
+
+## Sequence retrieval
+
