@@ -3,7 +3,102 @@ title: "Explore Polysaccharide Binding"
 output: html_notebook
 ---
 
-Many of the TanOak genes coming up with high dN/dS in the polysaccharide binding category are LRK10L2 homologs.  The goal here is to align the TanOak paralogs with other related orthlogs, build a tree, and see where changes are happening.
+Many of the TanOak genes coming up with high dN/dS in the polysaccharide binding category are LRK10L2 homologs.  The goal here is to align the TanOak paralogs with other related orthologs, build a tree, and see where changes are happening.
+
+```{r}
+library(tidyverse)
+library(Biostrings)
+library(UpSetR)
+```
+
 
 ## Sequence retrieval
 
+Start with blastp of `../output/polysaccharide_peps.fa`
+
+Try blastp with against the nr_clustered(experimental) database
+
+(but maybe I should be doing tblastx or tblastn so that I can get DNA sequences when I retrieve...)
+
+## Sequence overlap
+
+Have common sequences been retrieved for the different queries?
+
+```{r}
+hittable <- read_csv("../output/polysaccharide_seq_downloads/blastp/B7WS0BG6013-Alignment-HitTable.csv",
+                     col_names = c("query", "target")) %>%
+  mutate(query = str_remove(query, "_p.*"))
+head(hittable)
+```
+
+```{r}
+hit.counts <- hittable %>% select(target, query) %>%
+  unique() %>%
+  table() %>%
+  as.data.frame.matrix() 
+
+upset(hit.counts, nsets = 10, nintersects = NA)
+```
+
+So 70100 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal; LRK10L3), 
+   445 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal); NA, and 
+   74056 (NA; ATL96) are unique
+
+585 (NA; LRK10L2) and 804 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+
+781 (EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Serine/Threonine protein kinases active-site signature.; Protein kinase domain; Wall-associated kinase; EGF_CA; Protein kinase domain profile. ;WAK5	) and 74803 (Calcium-binding EGF-like domain signature.; EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Calcium-binding EGF domain; EGF_CA; EGF-like domain signature 2.; Aspartic acid and asparagine hydroxylation site.; WAK2	)  can be grouped together
+
+70081 (NA; ATL21), 72558 (Wall-associated receptor kinase galacturonan-binding; ATL21), and 833 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+
+Doesn't make a ton of sense.  what if blast these queries against one another
+
+## Blast all to all (polysaccharide queries)
+```{bash, eval=FALSE}
+cd ../output
+makeblastdb -in polysaccharide_peps.fa -dbtype prot
+```
+
+```{bash, eval=FALSE}
+cd ../output
+blastp -query polysaccharide_peps.fa -db polysaccharide_peps.fa -outfmt 7 > polysaccharide_self_blast.tsv
+```
+
+```{r}
+headers <- readLines("../output/polysaccharide_self_blast.tsv", n = 4)
+headers <- headers[4] # only keep the 4th line
+
+headers <- headers %>%
+  str_remove("# Fields: ") %>% # get rid of the extraneous information
+  str_split(", ") %>% #split into pieces 
+  unlist() %>% #convert to vector
+  make.names() %>% #make names the R can understand
+  str_replace(fixed(".."), ".") %>% # get rid of double .. in names.
+  str_replace("X.identity", "pct.identity") %>% # "%" got replaced with X, we can do better.
+  str_remove(fixed(".acc.ver"))
+
+poly_self_blast <- read_tsv("../output/polysaccharide_self_blast.tsv", col_names=headers, comment="#") %>%
+  mutate(query = str_remove(query, "_p.*"),
+         subject = str_remove(subject, "_p.*"))
+
+head(poly_self_blast)
+```
+
+Make matrix with bit score only
+
+```{r}
+poly.self.bits <- poly_self_blast %>% select(query, subject, bit.score) %>% 
+  group_by(query, subject) %>% 
+  slice_max(order_by = bit.score) %>%
+  pivot_wider(names_from = subject, values_from = bit.score, values_fill = 0) %>%
+  as.data.frame() %>%
+  column_to_rownames("query") %>%
+  as.matrix.data.frame()
+
+poly.self.bits
+
+colnames(poly.self.bits) == rownames(poly.self.bits)
+```
+
+convert to distance
+
+do columnwise normalization?
