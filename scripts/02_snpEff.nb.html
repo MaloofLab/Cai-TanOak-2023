@@ -1514,7 +1514,9 @@ window.initializeCodeFolding = function(show) {
     showCodeButton.append(showCodeText);
     showCodeButton
         .attr('data-toggle', 'collapse')
+        .attr('data-bs-toggle', 'collapse') // BS5
         .attr('data-target', '#' + id)
+        .attr('data-bs-target', '#' + id)   // BS5
         .attr('aria-expanded', showThis)
         .attr('aria-controls', id);
 
@@ -1604,6 +1606,7 @@ if (window.hljs) {
 
 
 
+
 <style type="text/css">
 #rmd-source-code {
   display: none;
@@ -1634,6 +1637,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -1743,7 +1749,7 @@ pre code {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -1778,78 +1784,35 @@ cp -s snpEff/snpEff.jar</code></pre>
 <h3>Number of genes</h3>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuYGBgYmFzaFxuY2QgXFwvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVxcXG5lY2hvIFxcZ2VuZTogXFwgJChncmVwIC1jIFxcXFxzZ2VuZVxcc1xcIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcblxuZWNobyBcXENEUzogXFwgJChncmVwIC1jIFxcXFxzQ0RTXFxzXFwgdjRkcmFmdC5tYWtlci5yZXBlYXRsaWIubm9zZXEuZ2ZmKVxuXG5lY2hvIFxcbVJOQTogXFwgJChncmVwIC1jIFxcXFxzbVJOQVxcc1xcIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcbmBgYFxuYGBgIn0= -->
-<pre class="bash"><code>```bash
-cd \/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly\
-echo \gene: \ $(grep -c \\sgene\s\ v4draft.maker.repeatlib.noseq.gff)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuY2QgXCIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVwiXG5lY2hvIFwiZ2VuZTogXCIgJChncmVwIC1jIFwiXFxzZ2VuZVxcc1wiIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcblxuZWNobyBcIkNEUzogXCIgJChncmVwIC1jIFwiXFxzQ0RTXFxzXCIgdjRkcmFmdC5tYWtlci5yZXBlYXRsaWIubm9zZXEuZ2ZmKVxuXG5lY2hvIFwibVJOQTogXCIgJChncmVwIC1jIFwiXFxzbVJOQVxcc1wiIHY0ZHJhZnQubWFrZXIucmVwZWF0bGliLm5vc2VxLmdmZilcbmBgYCJ9 -->
+<pre class="bash"><code>cd &quot;/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly&quot;
+echo &quot;gene: &quot; $(grep -c &quot;\sgene\s&quot; v4draft.maker.repeatlib.noseq.gff)
 
-echo \CDS: \ $(grep -c \\sCDS\s\ v4draft.maker.repeatlib.noseq.gff)
+echo &quot;CDS: &quot; $(grep -c &quot;\sCDS\s&quot; v4draft.maker.repeatlib.noseq.gff)
 
-echo \mRNA: \ $(grep -c \\smRNA\s\ v4draft.maker.repeatlib.noseq.gff)</code></pre>
-<pre><code>
-&lt;!-- rnb-source-end --&gt;
+echo &quot;mRNA: &quot; $(grep -c &quot;\smRNA\s&quot; v4draft.maker.repeatlib.noseq.gff)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuY2QgXCIvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVwiXG5lY2hvIFwiZ2VuZTogXCIgJChncmVwIC1jIFwiXFxzZ2VuZVxcc1wiIDEyXzIxX3Rhbm9ha19nZW5lLmdmZilcblxuZWNobyBcIkNEUzogXCIgJChncmVwIC1jIFwiXFxzQ0RTXFxzXCIgMTJfMjFfdGFub2FrX2Nkcy5nZmYpXG5gYGAifQ== -->
+<pre class="bash"><code>cd &quot;/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly&quot;
+echo &quot;gene: &quot; $(grep -c &quot;\sgene\s&quot; 12_21_tanoak_gene.gff)
 
-&lt;!-- rnb-output-begin eyJkYXRhIjoiZ2VuZTogIDMzMDM3XG5DRFM6ICAxNjQyMzZcbm1STkE6ICAzMzAzN1xuIn0= --&gt;
-</code></pre>
-<p>gene: 33037 CDS: 164236 mRNA: 33037</p>
-<pre><code>
-
-
-&lt;!-- rnb-output-end --&gt;
-
-&lt;!-- rnb-chunk-end --&gt;
-
-
-&lt;!-- rnb-text-begin --&gt;
-
-
-
-
-&lt;!-- rnb-text-end --&gt;
-
-
-&lt;!-- rnb-chunk-begin --&gt;
-
-
-&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgYmFzaFxuYGBgYmFzaFxuY2QgXFwvVm9sdW1lcy9Hb29nbGVEcml2ZS9TaGFyZWQgZHJpdmVzL1Rhbk9hay9uZXdfMTJfMjAyMV9hc3NlbWJseVxcXG5lY2hvIFxcZ2VuZTogXFwgJChncmVwIC1jIFxcXFxzZ2VuZVxcc1xcIDEyXzIxX3Rhbm9ha19nZW5lLmdmZilcblxuZWNobyBcXENEUzogXFwgJChncmVwIC1jIFxcXFxzQ0RTXFxzXFwgMTJfMjFfdGFub2FrX2Nkcy5nZmYpXG5gYGBcbmBgYCJ9 --&gt;
-
-```bash
-```bash
-cd \/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly\
-echo \gene: \ $(grep -c \\sgene\s\ 12_21_tanoak_gene.gff)
-
-echo \CDS: \ $(grep -c \\sCDS\s\ 12_21_tanoak_cds.gff)</code></pre>
-<pre><code>
-&lt;!-- rnb-source-end --&gt;
-
-&lt;!-- rnb-output-begin eyJkYXRhIjoiZ2VuZTogIDMzMDM3XG5DRFM6ICAxNjQyMzZcbiJ9 --&gt;
-</code></pre>
-<p>gene: 33037 CDS: 164236</p>
-<pre><code>
-
-
-&lt;!-- rnb-output-end --&gt;
-
-&lt;!-- rnb-chunk-end --&gt;
-
-
-&lt;!-- rnb-text-begin --&gt;
-
-
-## build genome index
-
-set up directories and update snpEff.config file
-
-&lt;!-- rnb-text-end --&gt;
-
-
-&lt;!-- rnb-chunk-begin --&gt;
-
-
-&lt;!-- rnb-source-begin eyJkYXRhIjpbImVjaG8gXCJ0YW5vYWsudjEyMjEuZ2Vub21lIDogVGFub2FrXCIgPj4gL3Vzci9sb2NhbC9iaW4vc25wRWZmL3NucEVmZi5jb25maWciLCIiLCJta2RpciAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYvZGF0YSIsIm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhL3Rhbm9hay52MTIyMSJdfQ== --&gt;
-
-```r
-echo &quot;tanoak.v1221.genome : Tanoak&quot; &gt;&gt; /usr/local/bin/snpEff/snpEff.config
+echo &quot;CDS: &quot; $(grep -c &quot;\sCDS\s&quot; 12_21_tanoak_cds.gff)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+</div>
+<div id="build-genome-index" class="section level2">
+<h2>build genome index</h2>
+<p>set up directories and update snpEff.config file</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjpbImVjaG8gXCJ0YW5vYWsudjEyMjEuZ2Vub21lIDogVGFub2FrXCIgPj4gL3Vzci9sb2NhbC9iaW4vc25wRWZmL3NucEVmZi5jb25maWciLCIiLCJta2RpciAvdXNyL2xvY2FsL2Jpbi9zbnBFZmYvZGF0YSIsIm1rZGlyIC91c3IvbG9jYWwvYmluL3NucEVmZi9kYXRhL3Rhbm9hay52MTIyMSJdfQ== -->
+<pre class="r"><code>echo &quot;tanoak.v1221.genome : Tanoak&quot; &gt;&gt; /usr/local/bin/snpEff/snpEff.config
 
 mkdir /usr/local/bin/snpEff/data
 mkdir /usr/local/bin/snpEff/data/tanoak.v1221</code></pre>
@@ -1885,7 +1848,6 @@ cd /usr/local/bin/snpEff
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-</div>
 </div>
 <div id="run-annotation" class="section level2">
 <h2>run annotation</h2>
