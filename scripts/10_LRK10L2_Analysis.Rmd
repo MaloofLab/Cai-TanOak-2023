@@ -9,6 +9,7 @@ Many of the TanOak genes coming up with high dN/dS in the polysaccharide binding
 library(tidyverse)
 library(Biostrings)
 library(UpSetR)
+library(gplots)
 ```
 
 
@@ -19,6 +20,18 @@ Start with blastp of `../output/polysaccharide_peps.fa`
 Try blastp with against the nr_clustered(experimental) database
 
 (but maybe I should be doing tblastx or tblastn so that I can get DNA sequences when I retrieve...)
+
+rename the sequence files
+```{r}
+tanoak_poly_aa <- readAAStringSet("../output/polysaccharide_peps.fa")
+rename_tibble <- tibble(qname = names(tanoak_poly_aa),
+                        filename = c("seqdump.txt", str_c("seqdump (",1:9,").txt"))) %>%
+  mutate(newname=str_c("tanoak_",str_extract(qname, "[0-9]+"), ".fa")) 
+rename_tibble
+
+rename_tibble %>% walk2(filename, newname, ~ file.rename(file.path("../output", .x), file.path("../output", .y)))
+```
+
 
 ## Sequence overlap
 
@@ -40,15 +53,19 @@ hit.counts <- hittable %>% select(target, query) %>%
 upset(hit.counts, nsets = 10, nintersects = NA)
 ```
 
-So 70100 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal; LRK10L3), 
-   445 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal); NA, and 
-   74056 (NA; ATL96) are unique
+70100 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal; LRK10L3),  
+445 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal); NA, and   
+74056 (NA; ATL96) are unique
 
-585 (NA; LRK10L2) and 804 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+585 (NA; LRK10L2) and   
+804 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
 
-781 (EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Serine/Threonine protein kinases active-site signature.; Protein kinase domain; Wall-associated kinase; EGF_CA; Protein kinase domain profile. ;WAK5	) and 74803 (Calcium-binding EGF-like domain signature.; EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Calcium-binding EGF domain; EGF_CA; EGF-like domain signature 2.; Aspartic acid and asparagine hydroxylation site.; WAK2	)  can be grouped together
+781 (EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Serine/Threonine protein kinases active-site signature.; Protein kinase domain; Wall-associated kinase; EGF_CA; Protein kinase domain profile. ;WAK5	)  AND  
+74803 (Calcium-binding EGF-like domain signature.; EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Calcium-binding EGF domain; EGF_CA; EGF-like domain signature 2.; Aspartic acid and asparagine hydroxylation site.; WAK2	)  can be grouped together
 
-70081 (NA; ATL21), 72558 (Wall-associated receptor kinase galacturonan-binding; ATL21), and 833 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+70081 (NA; ATL21),   
+72558 (Wall-associated receptor kinase galacturonan-binding; ATL21), and   
+833 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
 
 Doesn't make a ton of sense.  what if blast these queries against one another
 
@@ -77,8 +94,8 @@ headers <- headers %>%
   str_remove(fixed(".acc.ver"))
 
 poly_self_blast <- read_tsv("../output/polysaccharide_self_blast.tsv", col_names=headers, comment="#") %>%
-  mutate(query = str_remove(query, "_p.*"),
-         subject = str_remove(subject, "_p.*"))
+  mutate(query = str_extract(query, "[0-9]+"),
+         subject = str_extract(subject, "[0-9]+"))
 
 head(poly_self_blast)
 ```
@@ -101,4 +118,22 @@ colnames(poly.self.bits) == rownames(poly.self.bits)
 
 convert to distance
 
-do columnwise normalization?
+normalize per column
+```{r}
+poly.self.bits.norm <- apply(poly.self.bits, 2, function(x) x / max(x))
+poly.self.bits.dist <- 1-poly.self.bits.norm
+```
+
+```{r}
+cl <- hclust(dist(poly.self.bits))
+
+heatmap.2(poly.self.bits, trace = "none", Colv = as.dendrogram(cl), Rowv=as.dendrogram(cl),
+          col = colorpanel(25, low="white", high = "blue"))
+```
+
+Let's start with 804 and 585
+
+```{r}
+804_orthologs <- readAAStringSet()
+```
+
