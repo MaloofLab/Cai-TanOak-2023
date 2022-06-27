@@ -17,21 +17,21 @@ library(gplots)
 
 Start with blastp of `../output/polysaccharide_peps.fa`
 
-Try blastp with against the nr_clustered(experimental) database
+Try blastp against the nr_clustered(experimental) database
 
 (but maybe I should be doing tblastx or tblastn so that I can get DNA sequences when I retrieve...)
 
-rename the sequence files
-```{r}
+rename the sequence files (only needs to be done once)
+```{r, eval=FALSE} 
 tanoak_poly_aa <- readAAStringSet("../output/polysaccharide_peps.fa")
-rename_tibble <- tibble(qname = names(tanoak_poly_aa),
-                        filename = c("seqdump.txt", str_c("seqdump (",1:9,").txt"))) %>%
-  mutate(newname=str_c("tanoak_",str_extract(qname, "[0-9]+"), ".fa")) 
+rename_tibble <- tibble(qname = str_c(names(tanoak_poly_aa), ".fa"),
+                        filename = c("seqdump.txt", str_c("seqdump (",1:9,").txt")))
 rename_tibble
 
-rename_tibble %>% walk2(filename, newname, ~ file.rename(file.path("../output", .x), file.path("../output", .y)))
-```
+path <- "../output/polysaccharide_seq_downloads/blastp/"
 
+rename_tibble %>% mutate(test=walk2(filename, qname, ~ file.rename(file.path(path, .x), file.path(path, .y))))
+```
 
 ## Sequence overlap
 
@@ -131,9 +131,53 @@ heatmap.2(poly.self.bits, trace = "none", Colv = as.dendrogram(cl), Rowv=as.dend
           col = colorpanel(25, low="white", high = "blue"))
 ```
 
-Let's start with 804 and 585
+## 804 and 585
+
+Let's start with 804 and 585.  Need to get TanOak proteins, Oak proteins, and the blast results in one file.  Then align and make tree.
 
 ```{r}
-804_orthologs <- readAAStringSet()
+#blast results
+orthologs_804_505 <- c(
+  readAAStringSet("../output/polysaccharide_seq_downloads/blastp/augustus_masked-585_pilon-processed-gene-3.11-mRNA-1.fa"),
+  readAAStringSet("../output/polysaccharide_seq_downloads/blastp/augustus_masked-804_pilon-processed-gene-0.1-mRNA-1.fa")
+)
+
+#get rid of duplicate
+orthologs_804_505 <- orthologs_804_505[!duplicated(names(orthologs_804_505))]
+
+#add tanoak
+orthologs_804_505 <- c(tanoak_poly_aa[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
+                                        "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")],
+  orthologs_804_505)
+
+
+#to get the right oak proteins, load in the blastp table
+
+blastp_ortho <- read_csv("../output/tanoak_oak_blastp_orthologs.csv")
+
+# filter for those that we want
+oak_585_804_orthos <- blastp_ortho %>%
+  filter(str_detect(query_id, "augustus_masked-585_pilon-processed-gene-3\\.11-mRNA-1|augustus_masked-804_pilon-processed-gene-0\\.1-mRNA-1"))
+
+#read the Oak AA sequences and fix names
+qrobAA <- readAAStringSet("../input/blast/Qrob_PM1N_CDS_aa_20161004.fa")
+names(qrobAA) <- str_remove(names(qrobAA), " .*") #get rid of extra space and numbers
+
+#add oak
+orthologs_804_505 <- c(qrobAA[oak_585_orthos$subject_id],
+  orthologs_804_505)
+
+orthologs_804_505
 ```
+
+write out the table
+```{r}
+writeXStringSet(orthologs_804_505, "../output/tanoak_804_805_orthos.fa")
+```
+
+align!
+```{bash, eval=FALSE}
+time mafft --thread 3 --localpair --maxiterate 1000 --reorder ../output/tanoak_804_805_orthos.fa > ../output/tanoak_804_805_orthos_aligned.fa
+```
+
 
