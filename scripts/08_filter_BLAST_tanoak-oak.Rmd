@@ -121,6 +121,11 @@ dim(tanoak_blastp_ortho)
 ```
 
 
+```{r}
+write_csv(tanoak_blastp_ortho, "../output/tanoak_oak_blastp_orthologs.csv")
+```
+
+
 
 
 
@@ -224,6 +229,10 @@ dim(tanoak_dcmega_ortho)
 ```
 
 
+```{r}
+write_csv(tanoak_dcmega_ortho, "../output/tanoak_oak_dcmega_orthologs.csv")
+
+```
 
 
 
