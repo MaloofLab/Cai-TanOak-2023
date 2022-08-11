@@ -13,7 +13,7 @@ DATASET_COLORSTRIP
 SEPARATOR SPACE
 
 #label is used in the legend table (can be changed later)
-DATASET_LABEL species colors
+DATASET_LABEL label1
 
 #dataset color (can be changed later)
 COLOR #ff0000
@@ -24,7 +24,7 @@ COLOR #ff0000
 
 #If COLOR_BRANCHES is set to 1, branches of the tree will be colored according to the colors of the strips above the leaves.
 #When all children of a node have the same color, it will be colored the same, ie. the color will propagate inwards towards the root.
-COLOR_BRANCHES 1
+COLOR_BRANCHES 0
 
 
 #=================================================================#
@@ -45,20 +45,20 @@ COLOR_BRANCHES 1
 #5: left pointing triangle
 #6: checkmark
 
-#LEGEND_TITLE Dataset_legend
-#LEGEND_POSITION_X 100
-#LEGEND_POSITION_Y 100
-#LEGEND_HORIZONTAL 0
-#LEGEND_SHAPES 1 1 2 2
-#LEGEND_COLORS #ff0000 #00ff00 rgba(0,255,0,0.5) #0000ff
-#LEGEND_LABELS value1 value2 value3 value4
-#LEGEND_SHAPE_SCALES 1 1 0.5 1
+LEGEND_TITLE Species
+LEGEND_POSITION_X 100
+LEGEND_POSITION_Y 50
+LEGEND_HORIZONTAL 0
+LEGEND_SHAPES 1 1 1 1 1 1
+LEGEND_COLORS #ff0000 #00ff00 #0000ff #009900 #990000 #ffff00
+LEGEND_LABELS Red_Oak Soy Poplar Chestnut English_Oak Arabidopsis
+LEGEND_SHAPE_SCALES 1 1 1 1 1 1
 
 #width of the colored strip
-#STRIP_WIDTH 25
+STRIP_WIDTH 100
 
 #left margin, used to increase/decrease the spacing to the next dataset. Can be negative, causing datasets to overlap.
-#MARGIN 0
+MARGIN -450
 
 #border width; if set above 0, a border of specified width (in pixels) will be drawn around the color strip 
 #BORDER_WIDTH 0
@@ -111,18 +111,13 @@ COLOR_BRANCHES 1
 #=================================================================#
 #       Actual data follows after the "DATA" keyword              #
 #=================================================================#
-DATA  
-
-CONTAINS==Qrob #ff0000 EuropeanOak
-CONTAINS==Qurub #aa0000 RedOak
-CONTAINS==Caden #55ff00 AmericanChestnut
-CONTAINS==Potri #005555 Populus
-CONTAINS==Glyma #000099 Soy
-CONTAINS==AT.G #550055 Arabidopsis
+DATA
 
 #Examples:
 #assign a red colored strip to leaf 9606, with label 'Human'
-#9606 #ff0000 Human
-
-#assign a green, semi-transparent (alpha 0.5) strip to an internal node, without any label. If 'Show internal values' is set to 'No', this will only be displayed if the node is collapsed. 
-#9606|5664 rgba(0,255,0,0.5)
+CONTAINS==Glyma #00ff00 Soy
+CONTAINS==Qurub #ff0000 Red Oak
+CONTAINS==Qrob #990000 English Oak
+CONTAINS==Potri #0000ff Poplar
+CONTAINS==Caden #009900 Chestnut 
+CONTAINS==AT #ffff00 Arabidopsis
