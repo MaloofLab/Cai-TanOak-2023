@@ -1,0 +1,196 @@
+---
+title: "Explore Polysaccharide Binding"
+output: html_notebook
+---
+
+Many of the TanOak genes coming up with high dN/dS in the polysaccharide binding category are LRK10L2 homologs.  The goal here is to align the TanOak paralogs with other related homologs, build a tree, and see where changes are happening.
+
+Previously I blasted against the NR database, and that was a bit of a mess for building a tree.  Will try again, but with BLAST against selected organisms.
+
+```{r}
+library(tidyverse)
+library(Biostrings)
+library(UpSetR)
+library(gplots)
+```
+
+
+## Sequence retrieval
+
+Start with blastp of `../output/polysaccharide_peps.fa`
+
+Used phyotozome blastp tool against: 
+
+* Athaliana_TAIR10_167.proteome; 
+* Qrubra_v2_1_687.proteome;
+* Cdentata_v1_1_673.proteome; 
+* Gmax_Wm82_a4_v1_508.proteome;
+* Ptrichocarpa_v4_1_533.proteome
+
+Job is at https://phytozome-next.jgi.doe.gov/blast-results/589527
+
+Results table, retrieved peptides and cDNAs are in `output/blastp/polysaccharide_Seq_downloads/phytozome_blastp
+
+
+## Sequence overlap
+
+Have common sequences been retrieved for the different queries?
+
+```{r}
+hittable <- read_tsv("../output/polysaccharide_seq_downloads/phytozome_blastp/phytozome_polysach_blastp_071522.tsv",
+                     name_repair = make.names) %>%
+  select(-1) %>%
+  mutate(fasta.name = str_c({str_replace(Species, " ", "_") %>% str_replace("\\.", "") },
+                            str_extract(Protein, "[A-Za-z]*\\.?[A-Za-z0-9]*"),
+                            sep="|") ) 
+
+head(hittable)
+```
+
+```{r, fig.width=8}
+hit.counts <- hittable %>% select(Protein, Query.ID) %>%
+  unique() %>%
+  table() %>%
+  as.data.frame.matrix() 
+
+upset(hit.counts, nsets = 10, nintersects = 50)
+```
+
+70100 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal; LRK10L3),  
+445 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal); NA
+Are unique:
+
+585 (NA; LRK10L2) and   
+804 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+
+781 (EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Serine/Threonine protein kinases active-site signature.; Protein kinase domain; Wall-associated kinase; EGF_CA; Protein kinase domain profile. ;WAK5	)  AND  
+74803 (Calcium-binding EGF-like domain signature.; EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Calcium-binding EGF domain; EGF_CA; EGF-like domain signature 2.; Aspartic acid and asparagine hydroxylation site.; WAK2	)  can be grouped together
+
+70081 (NA; ATL21),   
+72558 (Wall-associated receptor kinase galacturonan-binding; ATL21), and   
+833 (Wall-associated receptor kinase galacturonan-binding; ATL21), AND
+74056 (NA; ATL96) can be grouped together
+
+## Qrob homologs
+
+Do blast to get all Qrob homologs
+
+```{bash, eval=FALSE}
+cd ../input/blast
+blastp -query ../../output/polysaccharide_peps.fa -db Qrob_PM1N_CDS_aa_20161004.fa -outfmt 7 > ../../output/polysaccharide_Qrob_blast.tsv
+```
+
+```{r}
+header <- str_split("query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score", pattern = ", ") %>%
+  unlist() %>%
+  make.names() %>%
+  str_replace(fixed(".."), ".") %>%
+  str_replace("X", "pct")
+
+Qrob_hittable <- read_tsv("../output/polysaccharide_Qrob_blast.tsv", comment = "#", col_names = header)
+
+Qrob_hittable
+```
+
+
+## 804 and 585
+
+Let's start with 804 and 585.  Need to get TanOak proteins, Oak proteins, and the blast results in one file.  Then align and make tree.
+
+```{r}
+#table of 804 and 585 hits 
+hits_804_585 <- hittable %>%
+  filter(Query.ID %in% c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
+                         "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")) %>%
+  filter(!duplicated(fasta.name))
+
+#blast results
+polysach_peps <- readAAStringSet("../output/polysaccharide_seq_downloads/phytozome_blastp/phytozome_polysach_blastp_pep_071522.fa.gz")
+
+homologs_804_585 <- polysach_peps[hits_804_585$fasta.name]
+
+#add tanoak
+tanoak_poly_aa <- readAAStringSet("../output/polysaccharide_peps.fa")
+
+homologs_804_585 <- c(tanoak_poly_aa[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
+                                       "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")],
+                      homologs_804_585)
+
+
+#to get the oak protein orthologs, load in the blastp table
+
+blastp_ortho <- read_csv("../output/tanoak_oak_blastp_orthologs.csv")
+
+# filter for those that we want
+oak_804_585_orthos <- blastp_ortho %>%
+  filter(str_detect(query_id, "augustus_masked-585_pilon-processed-gene-3\\.11-mRNA-1|augustus_masked-804_pilon-processed-gene-0\\.1-mRNA-1"))
+
+#read the Oak AA sequences and fix names
+qrobAA <- readAAStringSet("../input/blast/Qrob_PM1N_CDS_aa_20161004.fa")
+names(qrobAA) <- str_remove(names(qrobAA), " .*") #get rid of extra space and numbers
+
+qrobAA_804_585_orthtos <- qrobAA[oak_804_585_orthos$subject_id]
+
+#add "ortho" to name to make it clear
+names(qrobAA_804_585_orthtos) <- str_c(names(qrobAA_804_585_orthtos), "_orttho")
+
+#add oak
+homologs_804_585 <- c(qrobAA_804_585_orthtos,
+                      homologs_804_585)
+
+homologs_804_585
+```
+
+now add other Qrob orthologs:
+```{r}
+# get them:
+Qrob_hits_804_805 <- Qrob_hittable %>%
+  filter(query.acc.ver %in% c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
+                              "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1"),
+         !duplicated(subject.acc.ver),
+         bit.score >= 100) %>%
+  pull(subject.acc.ver)
+
+qrob_804_585_homologs <- qrobAA[Qrob_hits_804_805]
+
+homologs_804_585 <- c(homologs_804_585, qrob_804_585_homologs)
+```
+
+
+write out the table
+```{r}
+names(homologs_804_585) <- str_remove(names(homologs_804_585), ".*\\|")
+writeXStringSet(homologs_804_585, "../output/tanoak_804_585_orthos.fa")
+```
+
+align!
+```{bash, eval=TRUE}
+time mafft --thread 3 --localpair --maxiterate 1000 --reorder ../output/tanoak_804_585_orthos.fa > ../output/tanoak_804_585_orthos_aligned.fa
+```
+
+build tree
+```{bash, eval=TRUE}
+cd ../output
+fasttree tanoak_804_585_orthos_aligned.fa > tanoak_804_585_orthos.tre
+```
+
+## Export Tanoak, oak, and chestnut sequences:
+
+```{r}
+#585
+homologs_804_585[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1", "Qrob_P0680550.2", "Caden.12G048400", )] %>%
+  writeXStringSet("../output_585_orthos_small.fa")
+
+#804
+homologs_804_585[c("augustus_masked-804_pilon-processed-gene-0.1-mRNA-1","Qrob_P0468790.2", "Caden.12G048800")] %>%
+  writeXStringSet("../output_804_orthos_small.fa")
+```
+
+```{bash}
+time mafft --thread 3 --localpair --maxiterate 1000 ../output_585_orthos_small.fa > ../output_585_orthos_small_aligned.fa
+```
+
+```{bash}
+time mafft --thread 3 --localpair --maxiterate 1000 ../output_804_orthos_small.fa > ../output_804_orthos_small_aligned.fa
+```
+
