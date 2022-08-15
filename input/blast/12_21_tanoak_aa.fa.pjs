@@ -1,0 +1,22 @@
+{
+  "version": "1.2",
+  "dbname": "12_21_tanoak_aa.fa",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "12_21_tanoak_aa.fa",
+  "number-of-letters": 12904311,
+  "number-of-sequences": 33030,
+  "last-updated": "2022-08-13T15:59:00",
+  "number-of-volumes": 1,
+  "bytes-total": 17463820,
+  "bytes-to-cache": 13201694,
+  "files": [
+    "12_21_tanoak_aa.fa.pdb",
+    "12_21_tanoak_aa.fa.phr",
+    "12_21_tanoak_aa.fa.pin",
+    "12_21_tanoak_aa.fa.pot",
+    "12_21_tanoak_aa.fa.psq",
+    "12_21_tanoak_aa.fa.ptf",
+    "12_21_tanoak_aa.fa.pto"
+  ]
+}
