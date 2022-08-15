@@ -1,0 +1,39 @@
+---
+title: "10c_Get_585_3.11_Downstream"
+output: html_document
+date: "2022-08-14"
+---
+
+I have noticed that the 585 sequence is much shorter than most other homologs.  I am curious if this is bad annotaiton.  I will export 10KB from start of 585_3.11 and take a look
+
+```{r}
+library(Biostrings)
+library(tidyverse)
+```
+
+## Get genome sequence and prune
+```{r}
+seq <- readDNAStringSet("/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta")
+
+seq <- seq["585_pilon"]
+```
+
+## get gff
+```{r}
+gff <- read_tsv("/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/12_21_tanoak_gene.gff",
+                col_names = NA)
+head(gff)
+```
+
+```{r}
+gff %>% filter(str_detect(X9, "585_pilon.*gene-3\\.11"))
+```
+```{r}
+myseq <- seq %>% subseq(start=394185, end=394185+9999)
+myseq
+```
+
+```{r}
+myseq %>% writeXStringSet("../output/585_pilon_mRNA3.11_10kb.fa")
+```
+

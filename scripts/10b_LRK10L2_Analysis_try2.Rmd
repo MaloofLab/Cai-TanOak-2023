@@ -144,34 +144,90 @@ homologs_804_585
 now add other Qrob orthologs:
 ```{r}
 # get them:
-Qrob_hits_804_805 <- Qrob_hittable %>%
+Qrob_hits_804_585 <- Qrob_hittable %>%
   filter(query.acc.ver %in% c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
                               "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1"),
          !duplicated(subject.acc.ver),
          bit.score >= 100) %>%
   pull(subject.acc.ver)
 
-qrob_804_585_homologs <- qrobAA[Qrob_hits_804_805]
+qrob_804_585_homologs <- qrobAA[Qrob_hits_804_585]
 
 homologs_804_585 <- c(homologs_804_585, qrob_804_585_homologs)
 ```
 
 
-write out the table
+## Other Tanoak homologs
+
+I should also get similar Tanoak homologs.  For this I need to blast 804 and 585 against the Tanoak peptides
+
+```{r}
+writeXStringSet(tanoak_poly_aa[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
+                                       "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")],
+                "../output/tanoak_804_585_aa.fa")
+```
+
+```{bash, eval=FALSE}
+cd ../input/blast
+makeblastdb -in 12_21_tanoak_aa.fa -dbtype prot
+```
+
+
+```{bash, eval=FALSE}
+cd ../input/blast
+blastp -query ../../output/tanoak_804_585_aa.fa -db 12_21_tanoak_aa.fa -outfmt 7 > ../../output/804_585_vs_Tanoak_blastp.tsv
+ 
+```
+
+```{r}
+hits_tanoak_804_585 <- read_tsv("../output/804_585_vs_Tanoak_blastp.tsv",
+                                comment = "#",
+                                col_names = header) %>%
+  filter(evalue < 1e-5,
+         !subject.acc.ver %in% unique(query.acc.ver),
+         !duplicated(subject.acc.ver))
+
+hits_tanoak_804_585
+```
+
+### retreive the TanOak sequences and add
+```{r}
+Tanoak_aa <- readAAStringSet("../input/blast/12_21_tanoak_aa.fa")
+Tanoak_804_585_paralogs <- Tanoak_aa[hits_tanoak_804_585$subject.acc.ver]
+homologs_804_585 <- c(homologs_804_585, Tanoak_804_585_paralogs)
+```
+
+## Prune short sequences
+```{r}
+homologs_804_585 <- homologs_804_585[nchar(homologs_804_585) > 199]
+```
+
+## write out the table
 ```{r}
 names(homologs_804_585) <- str_remove(names(homologs_804_585), ".*\\|")
 writeXStringSet(homologs_804_585, "../output/tanoak_804_585_orthos.fa")
 ```
 
-align!
+## align!
 ```{bash, eval=TRUE}
-time mafft --thread 3 --localpair --maxiterate 1000 --reorder ../output/tanoak_804_585_orthos.fa > ../output/tanoak_804_585_orthos_aligned.fa
+time mafft --thread 8 --localpair --maxiterate 1000 --reorder ../output/tanoak_804_585_orthos.fa > ../output/tanoak_804_585_orthos_aligned.fa
 ```
 
-build tree
+## prune alignment
+
+```{r}
+aligned <- readAAMultipleAlignment("../output/tanoak_804_585_orthos_aligned.fa")
+aligned <- maskGaps(aligned, min.fraction=0.50, min.block.width=10)
+maskedratio(aligned)
+
+writeXStringSet(as(aligned, "AAStringSet"), "../output/tanoak_804_585_orthos_aligned_pruned.fa")
+```
+
+
+## build tree
 ```{bash, eval=TRUE}
 cd ../output
-fasttree tanoak_804_585_orthos_aligned.fa > tanoak_804_585_orthos.tre
+FastTreeMP tanoak_804_585_orthos_aligned_pruned.fa > tanoak_804_585_orthos.tre
 ```
 
 ## Export Tanoak, oak, and chestnut sequences:
