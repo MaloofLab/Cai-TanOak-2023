@@ -1,0 +1,22 @@
+{
+  "version": "1.2",
+  "dbname": "TanOak.proteins.fa",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "TanOak.proteins.fa",
+  "number-of-letters": 15405255,
+  "number-of-sequences": 51233,
+  "last-updated": "2022-11-14T14:31:00",
+  "number-of-volumes": 1,
+  "bytes-total": 28567329,
+  "bytes-to-cache": 15866465,
+  "files": [
+    "TanOak.proteins.fa.pdb",
+    "TanOak.proteins.fa.phr",
+    "TanOak.proteins.fa.pin",
+    "TanOak.proteins.fa.pot",
+    "TanOak.proteins.fa.psq",
+    "TanOak.proteins.fa.ptf",
+    "TanOak.proteins.fa.pto"
+  ]
+}
