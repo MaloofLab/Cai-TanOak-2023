@@ -1,0 +1,342 @@
+---
+title: "Filter BLAST TanOak-Oak and Export FASTA"
+author: "Paulo Magalang"
+date: "3/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Following https://malooflab.github.io/BIS180L_web_archive/2019/04/23/R-Practice-Blast/
+tutorial to join and filter reciprocal BLAST results.
+
+
+```{r packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(Biostrings)
+library(stringr)
+```
+
+
+### blastp results
+
+```{r}
+# loading in data
+
+tanoak_v_oak_blastp <- read_csv("../output/Tanoak_to_Oak_blastp.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+oak_v_tanoak_blastp <- read_csv("../output/Oak_to_Tanoak_blastp.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+head(oak_v_tanoak_blastp, 15)
+```
+
+```{r}
+# find the difference of the order of magnitude in E value between hits
+
+tanoak_v_oak_blastp <- tanoak_v_oak_blastp %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+tanoak_v_oak_blastp <- tanoak_v_oak_blastp %>% mutate(E_diff=log10(E)-log10(nextE))
+oak_v_tanoak_blastp <- oak_v_tanoak_blastp %>% mutate(E_diff=log10(E)-log10(nextE))
+
+head(tanoak_v_oak_blastp, 100)
+```
+
+```{r}
+# find best hits in both directions
+
+tanoak_v_oak_blastp_best <- tanoak_v_oak_blastp %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+oak_v_tanoak_blastp_best <- oak_v_tanoak_blastp %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+head(tanoak_v_oak_blastp_best)
+head(oak_v_tanoak_blastp_best)
+```
+
+```{r}
+# joining both tables together
+tanoak_blastp_recip <- left_join(tanoak_v_oak_blastp_best, oak_v_tanoak_blastp_best,
+                              by=c("subject_id"="query_id"),
+                              suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
+  select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
+
+head(tanoak_blastp_recip,10)
+dim(tanoak_blastp_recip)
+
+# 31081 total hits
+```
+
+```{r}
+# filter best reciprocal hits
+tanoak_blastp_ortho <- tanoak_blastp_recip %>%
+  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-04, E_diff.tanoak_oak < -2)
+
+# gut check
+head(tanoak_blastp_ortho)
+dim(tanoak_blastp_ortho)
+
+# 8649 hits post filtering (27.8% data retained)
+```
+
+
+```{r}
+write_csv(tanoak_blastp_ortho, "../output/tanoak_oak_blastp_orthologs.csv")
+```
+
+
+
+
+
+
+### dc megablast results
+
+```{r}
+# loading in data
+
+tanoak_v_oak_dcmega <- read_csv("../output/Tanoak_to_Oak_dc-megablast.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+oak_v_tanoak_dcmega <- read_csv("../output/Oak_to_Tanoak_dc-megablast.csv",
+                       col_names=c("query_id",
+                                   "subject_id",
+                                   "pct_ident",
+                                   "len",
+                                   "mis",
+                                   "gaps",
+                                   "qb",
+                                   "qe",
+                                   "sb",
+                                   "se",
+                                   "E",
+                                   "Score"))
+
+```
+
+```{r}
+# find the difference of the order of magnitude in E value between hits
+
+tanoak_v_oak_dcmega <- tanoak_v_oak_dcmega %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+oak_v_tanoak_dcmega <- oak_v_tanoak_dcmega %>% 
+  arrange(query_id, E) %>% 
+  group_by(query_id) %>% 
+  mutate(nextE = lead(E)) %>%
+  ungroup()
+
+tanoak_v_oak_dcmega <- tanoak_v_oak_dcmega %>% mutate(E_diff=log10(E)-log10(nextE))
+oak_v_tanoak_dcmega <- oak_v_tanoak_dcmega %>% mutate(E_diff=log10(E)-log10(nextE))
+
+head(tanoak_v_oak_dcmega, 100)
+```
+
+```{r}
+# find best hits in both directions
+
+tanoak_v_oak_dcmega_best <- tanoak_v_oak_dcmega %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+oak_v_tanoak_dcmega_best <- oak_v_tanoak_dcmega %>%
+  arrange(query_id, E, desc(Score)) %>%
+  filter(!duplicated(query_id)) %>%
+  select(query_id, subject_id, pct_ident, len, E, nextE, E_diff, Score)
+
+head(tanoak_v_oak_dcmega_best)
+head(oak_v_tanoak_dcmega_best)
+```
+
+```{r}
+# joining both tables together
+tanoak_dcmega_recip <- left_join(tanoak_v_oak_dcmega_best, oak_v_tanoak_dcmega_best,
+                              by=c("subject_id"="query_id"),
+                              suffix = c(".tanoak_oak", ".oak_tanoak")) %>%
+  select(query_id, subject_id, subject_id.oak_tanoak, everything()) # rearrange columns 
+
+head(tanoak_dcmega_recip,10)
+dim(tanoak_dcmega_recip)
+
+# 29579 total hits
+```
+
+```{r}
+# filter best reciprocal hits
+tanoak_dcmega_ortho <- tanoak_dcmega_recip %>%
+  filter(query_id == subject_id.oak_tanoak, E.tanoak_oak < 1e-04, E_diff.tanoak_oak < -2)
+
+# gut check
+head(tanoak_dcmega_ortho)
+dim(tanoak_dcmega_ortho)
+
+# 6095 post filtering (20.6% data retained)
+```
+
+
+```{r}
+write_csv(tanoak_dcmega_ortho, "../output/tanoak_oak_dcmega_orthologs.csv")
+
+```
+
+
+
+
+
+### Export each ortholog pair into separate fasta files
+
+```{r}
+# cleanup, delete everything except for ortholog pairs
+rm(list = setdiff(ls(), c("tanoak_blastp_ortho", "tanoak_dcmega_ortho")))
+gc()
+```
+
+```{r}
+getwd()
+```
+
+```{r}
+# load in fasta files
+tanoak_fasta <- readDNAStringSet("../input/blast/TanOak.transcripts.fa.gz")
+oak_fasta <- readDNAStringSet("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa.gz")
+
+# put them into one object
+seqs <- c(tanoak_fasta, oak_fasta)
+
+# change names to match with query and subject ID
+names(seqs) <- names(seqs) %>% 
+  str_extract("[^ ]*") # take everything before the first space
+```
+
+```{r}
+# prep filenames
+
+if(! dir.exists("../output/ortho/blastp_ortholog/raw_seqs/")) dir.create("../output/ortho/blastp_ortholog/raw_seqs/", recursive = TRUE)
+
+if(!dir.exists("../output/ortho/dcmega_ortholog/raw_seqs/")) dir.create("../output/ortho/dcmega_ortholog/raw_seqs/", recursive = TRUE)
+
+
+tanoak_blastp_ortho <- tanoak_blastp_ortho %>%
+  select(query_id, subject_id) %>%
+  mutate(filepath = paste0("../output/ortho/blastp_ortholog/raw_seqs/", query_id, "--", subject_id, ".fasta"))
+
+tanoak_dcmega_ortho <- tanoak_dcmega_ortho %>%
+  select(query_id, subject_id) %>%
+  mutate(filepath = paste0("../output/ortho/dcmega_ortholog/raw_seqs/", query_id, "--", subject_id, ".fasta"))
+
+head(tanoak_blastp_ortho)
+```
+
+```{r}
+# generate fasta files for blastp results
+
+# for each row in the table,
+#   find the sequence data in seqs for query and subject IDs
+#   put DNAstrings into a DNAStringSet object
+#   export using the filename at the given index
+
+system.time(
+for (i in seq(1, dim(tanoak_blastp_ortho)[1])) {
+  # get ID names
+  tanoak_id <- tanoak_blastp_ortho[i, ]$query_id
+  oak_id <- tanoak_blastp_ortho[i, ]$subject_id
+  path <- tanoak_blastp_ortho[i, ]$filepath
+  
+  # get sequence data
+  ids <- c(tanoak_id, oak_id)
+  ortho_pair <- seqs[ids]
+  
+  # export as a fasta file
+  writeXStringSet(x = ortho_pair, filepath = path)
+})
+
+# ~7 min runtime
+```
+
+
+```{r}
+# generate fasta files for dcmegablast results
+
+system.time(
+for (i in seq(1, dim(tanoak_dcmega_ortho)[1])) {
+  # get ID names
+  tanoak_id <- tanoak_dcmega_ortho[i, ]$query_id
+  oak_id <- tanoak_dcmega_ortho[i, ]$subject_id
+  path <- tanoak_dcmega_ortho[i, ]$filepath
+  
+  # get sequence data
+  ids <- c(tanoak_id, oak_id)
+  ortho_pair <- seqs[ids]
+  
+  # export as a fasta file
+  writeXStringSet(x = ortho_pair, filepath = path)
+})
+
+# ~5min runtime
+```
+
+
+
+
+
+
+
+
+
+
+

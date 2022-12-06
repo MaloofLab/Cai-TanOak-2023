@@ -1,0 +1,183 @@
+---
+title: "Explore Polysaccharide Binding"
+output: html_notebook
+---
+
+Many of the TanOak genes coming up with high dN/dS in the polysaccharide binding category are LRK10L2 homologs.  The goal here is to align the TanOak paralogs with other related orthologs, build a tree, and see where changes are happening.
+
+```{r}
+library(tidyverse)
+library(Biostrings)
+library(UpSetR)
+library(gplots)
+```
+
+
+## Sequence retrieval
+
+Start with blastp of `../output/polysaccharide_peps.fa`
+
+Try blastp against the nr_clustered(experimental) database
+
+(but maybe I should be doing tblastx or tblastn so that I can get DNA sequences when I retrieve...)
+
+rename the sequence files (only needs to be done once)
+```{r, eval=FALSE} 
+tanoak_poly_aa <- readAAStringSet("../output/polysaccharide_peps.fa")
+rename_tibble <- tibble(qname = str_c(names(tanoak_poly_aa), ".fa"),
+                        filename = c("seqdump.txt", str_c("seqdump (",1:9,").txt")))
+rename_tibble
+
+path <- "../output/polysaccharide_seq_downloads/blastp/"
+
+rename_tibble %>% mutate(test=walk2(filename, qname, ~ file.rename(file.path(path, .x), file.path(path, .y))))
+```
+
+## Sequence overlap
+
+Have common sequences been retrieved for the different queries?
+
+```{r}
+hittable <- read_csv("../output/polysaccharide_seq_downloads/blastp/B7WS0BG6013-Alignment-HitTable.csv",
+                     col_names = c("query", "target")) %>%
+  mutate(query = str_remove(query, "_p.*"))
+head(hittable)
+```
+
+```{r}
+hit.counts <- hittable %>% select(target, query) %>%
+  unique() %>%
+  table() %>%
+  as.data.frame.matrix() 
+
+upset(hit.counts, nsets = 10, nintersects = NA)
+```
+
+70100 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal; LRK10L3),  
+445 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal); NA, and   
+74056 (NA; ATL96) are unique
+
+585 (NA; LRK10L2) and   
+804 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+
+781 (EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Serine/Threonine protein kinases active-site signature.; Protein kinase domain; Wall-associated kinase; EGF_CA; Protein kinase domain profile. ;WAK5	)  AND  
+74803 (Calcium-binding EGF-like domain signature.; EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Calcium-binding EGF domain; EGF_CA; EGF-like domain signature 2.; Aspartic acid and asparagine hydroxylation site.; WAK2	)  can be grouped together
+
+70081 (NA; ATL21),   
+72558 (Wall-associated receptor kinase galacturonan-binding; ATL21), and   
+833 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+
+Doesn't make a ton of sense.  what if blast these queries against one another
+
+## Blast all to all (polysaccharide queries)
+```{bash, eval=FALSE}
+cd ../output
+makeblastdb -in polysaccharide_peps.fa -dbtype prot
+```
+
+```{bash, eval=FALSE}
+cd ../output
+blastp -query polysaccharide_peps.fa -db polysaccharide_peps.fa -outfmt 7 > polysaccharide_self_blast.tsv
+```
+
+```{r}
+headers <- readLines("../output/polysaccharide_self_blast.tsv", n = 4)
+headers <- headers[4] # only keep the 4th line
+
+headers <- headers %>%
+  str_remove("# Fields: ") %>% # get rid of the extraneous information
+  str_split(", ") %>% #split into pieces 
+  unlist() %>% #convert to vector
+  make.names() %>% #make names the R can understand
+  str_replace(fixed(".."), ".") %>% # get rid of double .. in names.
+  str_replace("X.identity", "pct.identity") %>% # "%" got replaced with X, we can do better.
+  str_remove(fixed(".acc.ver"))
+
+poly_self_blast <- read_tsv("../output/polysaccharide_self_blast.tsv", col_names=headers, comment="#") %>%
+  mutate(query = str_extract(query, "[0-9]+"),
+         subject = str_extract(subject, "[0-9]+"))
+
+head(poly_self_blast)
+```
+
+Make matrix with bit score only
+
+```{r}
+poly.self.bits <- poly_self_blast %>% select(query, subject, bit.score) %>% 
+  group_by(query, subject) %>% 
+  slice_max(order_by = bit.score) %>%
+  pivot_wider(names_from = subject, values_from = bit.score, values_fill = 0) %>%
+  as.data.frame() %>%
+  column_to_rownames("query") %>%
+  as.matrix.data.frame()
+
+poly.self.bits
+
+colnames(poly.self.bits) == rownames(poly.self.bits)
+```
+
+convert to distance
+
+normalize per column
+```{r}
+poly.self.bits.norm <- apply(poly.self.bits, 2, function(x) x / max(x))
+poly.self.bits.dist <- 1-poly.self.bits.norm
+```
+
+```{r}
+cl <- hclust(dist(poly.self.bits))
+
+heatmap.2(poly.self.bits, trace = "none", Colv = as.dendrogram(cl), Rowv=as.dendrogram(cl),
+          col = colorpanel(25, low="white", high = "blue"))
+```
+
+## 804 and 585
+
+Let's start with 804 and 585.  Need to get TanOak proteins, Oak proteins, and the blast results in one file.  Then align and make tree.
+
+```{r}
+#blast results
+orthologs_804_505 <- c(
+  readAAStringSet("../output/polysaccharide_seq_downloads/blastp/augustus_masked-585_pilon-processed-gene-3.11-mRNA-1.fa"),
+  readAAStringSet("../output/polysaccharide_seq_downloads/blastp/augustus_masked-804_pilon-processed-gene-0.1-mRNA-1.fa")
+)
+
+#get rid of duplicate
+orthologs_804_505 <- orthologs_804_505[!duplicated(names(orthologs_804_505))]
+
+#add tanoak
+orthologs_804_505 <- c(tanoak_poly_aa[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
+                                        "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")],
+  orthologs_804_505)
+
+
+#to get the right oak proteins, load in the blastp table
+
+blastp_ortho <- read_csv("../output/tanoak_oak_blastp_orthologs.csv")
+
+# filter for those that we want
+oak_585_804_orthos <- blastp_ortho %>%
+  filter(str_detect(query_id, "augustus_masked-585_pilon-processed-gene-3\\.11-mRNA-1|augustus_masked-804_pilon-processed-gene-0\\.1-mRNA-1"))
+
+#read the Oak AA sequences and fix names
+qrobAA <- readAAStringSet("../input/blast/Qrob_PM1N_CDS_aa_20161004.fa")
+names(qrobAA) <- str_remove(names(qrobAA), " .*") #get rid of extra space and numbers
+
+#add oak
+orthologs_804_505 <- c(qrobAA[oak_585_orthos$subject_id],
+  orthologs_804_505)
+
+orthologs_804_505
+```
+
+write out the table
+```{r}
+writeXStringSet(orthologs_804_505, "../output/tanoak_804_805_orthos.fa")
+```
+
+align!
+```{bash, eval=FALSE}
+time mafft --thread 3 --localpair --maxiterate 1000 --reorder ../output/tanoak_804_805_orthos.fa > ../output/tanoak_804_805_orthos_aligned.fa
+```
+
+

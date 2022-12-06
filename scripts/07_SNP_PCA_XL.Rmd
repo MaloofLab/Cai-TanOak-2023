@@ -1,34 +1,27 @@
 ---
 title: "PCA of SNPs"
-output: html_document
+output: html_notebook
 ---
 
 Will make a PCA plot of SNPs, colored by phenotype.
 
 In this version include XL assemblies
 
-__RUNS OUT OF MEMORY ON MY LAPTOP, RUN ELSEWHERE__
-
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
 library(ggrepel)
-library(snpStats)
-#datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
-datadir <- "../input/new_12_2021_assembly/" # for cluster
+datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/vcf_with_xl/"
 outdir <- "../output/"
 ```
 
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
+tab <- TabixFile(file.path(datadir, "cohort.XL.genotyped.vcf.gz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
-contig.lengths <- read_tsv(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai"), 
-                  col_names = c("name", "length", "offset", "lineLength", "lineLengthB")) %>%
-  dplyr::select(name, length) %>%
-  arrange(desc(length))
-head(contig.lengths, 10)
+## load contig lengths file 
+contig.lengths <- read_csv("../output/contigLengths.csv")
 
 contig.lengths_tab <- contig.lengths %>%
   filter(name %in% tab_seqnames)
@@ -117,11 +110,6 @@ results <- results %>%
   mutate(PCtibble = map(PCs, getPCtibble))
 gc()
 ```
-
-```{r}
-save(results, "../output/XL_PCA_resutls.Rdata")
-```
-
 
 ```{r}
 results %>% dplyr::select(trial, pctvar) %>% 
