@@ -252,8 +252,8 @@ getwd()
 
 ```{r}
 # load in fasta files
-tanoak_fasta <- readDNAStringSet("../input/blast/12_21_tanoak_CDS.fa")
-oak_fasta <- readDNAStringSet("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa")
+tanoak_fasta <- readDNAStringSet("../input/blast/TanOak.transcripts.fa.gz")
+oak_fasta <- readDNAStringSet("../input/blast/Qrob_PM1N_CDS_nt_20161004.fa.gz")
 
 # put them into one object
 seqs <- c(tanoak_fasta, oak_fasta)
@@ -265,6 +265,12 @@ names(seqs) <- names(seqs) %>%
 
 ```{r}
 # prep filenames
+
+if(! dir.exists("../output/ortho/blastp_ortholog/raw_seqs/")) dir.create("../output/ortho/blastp_ortholog/raw_seqs/", recursive = TRUE)
+
+if(!dir.exists("../output/ortho/dcmega_ortholog/raw_seqs/")) dir.create("../output/ortho/dcmega_ortholog/raw_seqs/", recursive = TRUE)
+
+
 tanoak_blastp_ortho <- tanoak_blastp_ortho %>%
   select(query_id, subject_id) %>%
   mutate(filepath = paste0("../output/ortho/blastp_ortholog/raw_seqs/", query_id, "--", subject_id, ".fasta"))
