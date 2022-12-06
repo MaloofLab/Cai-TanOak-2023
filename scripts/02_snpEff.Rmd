@@ -11,27 +11,27 @@ This documents using [SNPeff](https://pcingola.github.io/SnpEff/) to annotate SN
 cd /usr/local/bin
 wget https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
 unzip snpEff_latest_core.zip
-cp -s snpEff/snpEff.jar
+cp -s snpEff/snpEff.jar .
 ```
 
 
 ### Number of genes
 
 ```{bash}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
-echo "gene: " $(grep -c "\sgene\s" v4draft.maker.repeatlib.noseq.gff)
+cd "/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/John_Maker/Round_2"
 
-echo "CDS: " $(grep -c "\sCDS\s" v4draft.maker.repeatlib.noseq.gff)
+echo "gene: " $(grep -c "\sgene\s" TanOak2.all.gene.gff)
 
-echo "mRNA: " $(grep -c "\smRNA\s" v4draft.maker.repeatlib.noseq.gff)
-```
+echo "CDS: " $(grep -c "\sCDS\s" TanOak2.all.gene.gff)
 
+echo "mRNA: " $(grep -c "\smRNA\s" TanOak2.all.gene.gff)
 
-```{bash}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
-echo "gene: " $(grep -c "\sgene\s" 12_21_tanoak_gene.gff)
+echo "gene: " $(grep -c "\sgene\s" TanOak2.small.gff)
 
-echo "CDS: " $(grep -c "\sCDS\s" 12_21_tanoak_cds.gff)
+echo "CDS: " $(grep -c "\sCDS\s" TanOak2.small.gff)
+
+echo "mRNA: " $(grep -c "\smRNA\s" TanOak2.small.gff)
+
 ```
 
 ## build genome index
@@ -42,31 +42,37 @@ echo "tanoak.v1221.genome : Tanoak" >> /usr/local/bin/snpEff/snpEff.config
 
 mkdir /usr/local/bin/snpEff/data
 mkdir /usr/local/bin/snpEff/data/tanoak.v1221
+mkdir /usr/local/bin/snpEff/data/genomes
 ```
 
-
+Move files
 ```{bash, eval=FALSE}
 cd /usr/local/bin/snpEff/data/genomes
 
-#gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta > tanoak.v1221.fa.gz
+gzip -c /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta > tanoak.v1221.fa.gz
 
 cd /usr/local/bin/snpEff/data/tanoak.v1221
 
-#gzip -c /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/v4draft.maker.repeatlib.noseq.gff > genes.gff.gz
+gzip -c /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/John_Maker/Round_2/TanOak2.small.gff > genes.gff.gz
 
-cp /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/12_21_tanoak_CDS.fa cds.fa
+cp /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/John_Maker/Round_2/TanOak.transcripts.fa cds.fa
 
-cp /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/12_21_tanoak_aa.fa protein.fa
+cp /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/John_Maker/Round_2/TanOak.proteins.fa protein.fa
+```
 
+build it
+```{bash, eval=FALSE}
+# DO NOT RUN THIS IN RSTUDIO
+# RUN IN TERMINAL
 cd /usr/local/bin/snpEff
-/usr/local/opt/openjdk/bin/java -jar snpEff.jar build -gff3 -v tanoak.v1221
+/opt/homebrew/opt/openjdk/bin/java -jar snpEff.jar build -gff3 -v tanoak.v1221
 ```
 
 
 check it
 ```{bash, eval=FALSE}
 cd /usr/local/bin/snpEff
-/usr/local/opt/openjdk/bin/java -jar snpEff.jar dump tanoak.v1221   | head -n 40
+/opt/homebrew/opt/openjdk/bin/java -jar snpEff.jar dump tanoak.v1221   | head -n 40
 ```
 
 ## run annotation
@@ -74,16 +80,16 @@ cd /usr/local/bin/snpEff
 ```{bash, eval=FALSE}
 cd ~/git/TanOak/output
 
-time /usr/local/opt/openjdk/bin/java -Xmx8g -jar /usr/local/bin/snpEff.jar tanoak.v1221 /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.vcf.gz > /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf
+time /opt/homebrew/opt/openjdk/bin/java -Xmx16g -jar /usr/local/bin/snpEff.jar tanoak.v1221 /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.vcf.gz > /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf
 
-cd /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly
+cd /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly
 bcftools convert --output-type z cohort.all.genotyped.snpEff.vcf > cohort.all.genotyped.snpEff.vcf.bgz
 rm cohort.all.genotyped.snpEff.vcf
 tabix cohort.all.genotyped.snpEff.vcf.bgz
 
-ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz ~/git/TanOak/output
+ln -s /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz ~/git/TanOak/output
 
-ln -s /Volumes/GoogleDrive/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz.tbi ~/git/TanOak/output
+ln -s /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.vcf.bgz.tbi ~/git/TanOak/output
 
 ```
 
