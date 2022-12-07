@@ -1,0 +1,22 @@
+{
+  "version": "1.2",
+  "dbname": "TAIR10_pep_20110103_representative_gene_model_updated.fa",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "TAIR10_pep_20110103_representative_gene_model_updated.fa",
+  "number-of-letters": 11106569,
+  "number-of-sequences": 27416,
+  "last-updated": "2022-12-06T10:17:00",
+  "number-of-volumes": 1,
+  "bytes-total": 17829640,
+  "bytes-to-cache": 11353506,
+  "files": [
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.pdb",
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.phr",
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.pin",
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.pot",
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.psq",
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.ptf",
+    "TAIR10_pep_20110103_representative_gene_model_updated.fa.pto"
+  ]
+}

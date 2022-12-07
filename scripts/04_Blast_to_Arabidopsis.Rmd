@@ -12,7 +12,7 @@ library(tidyverse)
 
 ```{bash}
 cd ../input
-wget https://www.arabidopsis.org/download_files/Sequences/TAIR10_blastsets/TAIR10_pep_20110103_representative_gene_model_updated
+wget ftp://ftp.arabidopsis.org/home/tair/Sequences/blast_datasets/TAIR10_blastsets/TAIR10_pep_20110103_representative_gene_model_updated
 mv TAIR10_pep_20110103_representative_gene_model_updated TAIR10_pep_20110103_representative_gene_model_updated.fa
 ```
 
@@ -26,7 +26,7 @@ makeblastdb -in TAIR10_pep_20110103_representative_gene_model_updated.fa -dbtype
 
 cd ../output
 
-blastp -query ../input/blast/12_21_tanoak_aa.fa \
+blastp -query ../input/blast/TanOak.proteins.fa \
   -db ../input/TAIR10_pep_20110103_representative_gene_model_updated.fa \
   -outfmt 10 \
   -evalue 10e-3 \

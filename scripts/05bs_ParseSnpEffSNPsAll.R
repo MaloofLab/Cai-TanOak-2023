@@ -1,4 +1,4 @@
-# This is a modified version of script 04_ParseSnpeEfSNPs and 06_Analyze_SnpEffSNPs.  
+# This is a modified version of script 05_ParseSnpeEfSNPs and 06_Analyze_SnpEffSNPs.  
 # While the other version filters SNPs just to retain those of moderate and high effect, 
 # here we will keep all (After filtering for quality, etc).  Will then run fisher test and anova tests
 # annotate
