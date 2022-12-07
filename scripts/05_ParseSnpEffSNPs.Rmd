@@ -1,5 +1,5 @@
 ---
-title: "04 parse snpEff vcf"
+title: "05 parse snpEff vcf"
 output: html_notebook
 ---
 
@@ -10,7 +10,7 @@ The goal here is to find genes that have changes predicted to effect protein fun
 ```{r}
 library(tidyverse)
 library(VariantAnnotation)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/"
+datadir <- "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/"
 ```
 
 ```{r}
@@ -19,7 +19,7 @@ dir(datadir)
 
 Index the fasta file.  Only needs to be done once
 ```{bash, eval=FALSE}
-samtools faidx "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta"
+samtools faidx "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta"
 ```
 
 ## filter
@@ -27,9 +27,9 @@ samtools faidx "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/P
 ### for variants of moderate or high effect
 
 ```{bash, eval=FALSE}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
+cd /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof\@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/
 
-bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.all.genotyped.snpEff.vcf.gz > cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
+bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.all.genotyped.snpEff.vcf.bgz > cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
 
 tabix cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
 ```
@@ -37,9 +37,9 @@ tabix cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
 ### to remove intergenic SNPs
 
 ```{bash, eval=FALSE}
-cd "/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly"
+cd /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof\@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/
 
-bcftools convert --output-type z --exclude "INFO/ANN ~ 'intergenic_region'" cohort.all.genotyped.snpEff.vcf.gz > cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
+bcftools convert --output-type z --exclude "INFO/ANN ~ 'intergenic_region'" cohort.all.genotyped.snpEff.vcf.bgz > cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
 
 tabix cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
 ```
@@ -48,7 +48,7 @@ tabix cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
 
 ```{r}
 contig.lengths <-
-  system("bcftools view -h '/Volumes/GoogleDrive/Shared drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz' | grep contig", inter=TRUE) %>%
+  system("bcftools view -h '/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz' | grep contig", inter=TRUE) %>%
   as_tibble() %>%
   mutate(value=str_remove_all(value, "(##contig=<ID=)|(length=)|>")) %>%
   separate(value, into = c("name", "length"), sep=",", convert = TRUE )
