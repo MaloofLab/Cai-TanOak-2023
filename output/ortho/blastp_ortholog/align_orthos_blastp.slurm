@@ -5,7 +5,7 @@
 #SBATCH --nodes=1 # single node, anything more than 1 will not run
 #SBATCH --ntasks=1 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
 #SBATCH --mem-per-cpu=4000 # in MB default is 2GB per cpu
-#SBATCH --time=02:00:00  # expected time of completion in hours, minutes, seconds, default 1-day
+#SBATCH --time=03:00:00  # expected time of completion in hours, minutes, seconds, default 1-day
 #SBATCH --output=ortho_align_%A_%a.out # STDOUT
 #SBATCH --error=ortho_align_%A_%a.err # STDERR
 #SBATCH --mail-user=prmagalang@ucdavis.edu #
@@ -21,6 +21,10 @@ cd /share/malooflab/Julin/git/TanOak/output/ortho/blastp_ortholog
 
 # Identify each array run
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
+
+# make directories if needed
+mkdir -p aligned_seqs/aa
+mkdir -p aligned_seqs/nt
 
 # set up starting indices
 start_index=$(( ($SLURM_ARRAY_TASK_ID - 1) * 1000 ))

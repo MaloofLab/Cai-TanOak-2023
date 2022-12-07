@@ -5,7 +5,7 @@
 #SBATCH --nodes=1 # single node, anything more than 1 will not run
 #SBATCH --ntasks=1 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
 #SBATCH --mem-per-cpu=4000 # in MB default is 2GB per cpu
-#SBATCH --time=01:00:00  # expected time of completion in hours, minutes, seconds, default 1-day
+#SBATCH --time=02:00:00  # expected time of completion in hours, minutes, seconds, default 1-day
 #SBATCH --output=ortho_align_dcmegablast_%A_%a.out # STDOUT
 #SBATCH --error=ortho_align_dcmegablast_%A_%a.err # STDERR
 #SBATCH --mail-user=prmagalang@ucdavis.edu #
@@ -18,6 +18,10 @@ start=`date +%s`
 module load java/jdk11.0
 
 cd /share/malooflab/Julin/git/TanOak/output/ortho/dcmega_ortholog
+
+# make output directories if needed
+mkdir -p aligned_seqs/nt
+mkdir -p aligned_seqs/aa
 
 # Identify each array run
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID

@@ -3,7 +3,7 @@
 #SBATCH --job-name=interproscan # Job name
 #SBATCH --nodes=1 # single node, anything more than 1 will not run
 #SBATCH --ntasks=16 # equivalent to cpus, stick to around 20 max on gc64, or gc128 nodes
-#SBATCH --mem-per-cpu=2000 # in MB, memory pool all cores, default is 2GB per cpu
+#SBATCH --mem-per-cpu=8000 # in MB, memory pool all cores, default is 2GB per cpu
 #SBATCH --time=2-00:30:00  # expected time of completion in hours, minutes, seconds, default 1-day
 #SBATCH --output=ips_%A.out # STDOUT
 #SBATCH --error=ips_%A.err # STDERR
@@ -18,7 +18,7 @@ start=`date +%s`
 
 # Load modules
 
-module load interproscan/5.30-69.0
+module load interproscan/5.57-90.0
 # set up envrionment
 
 export IPS_CONFIG_DIR=/share/malooflab/Julin/git/TanOak/ipr_config
@@ -27,7 +27,7 @@ export IPS_CONFIG_DIR=/share/malooflab/Julin/git/TanOak/ipr_config
 
 cd /share/malooflab/Julin/git/TanOak
 
-interproscan.sh --input input/blast/12_21_tanoak_aa.fa \
+interproscan.sh --input input/blast/TanOak.proteins.fa \
   --output-file-base output/12_21_tanoak_interpro \
   --goterms \
   --iprlookup \
