@@ -25,6 +25,7 @@ library(stringr)
 # ! character from alignment software cannot be handled by ape when loading in fasta file, causing unequal
 # sequence lengths, need to convert those characters to '-' in all files
 
+#note for some reason this works on Barbera but not on Mac
 
 # replace ! with - in fasta files in the current directory
 grep -Rl '!' . | xargs sed -i 's/!/-/g'
@@ -53,11 +54,15 @@ for (i in 1:total) {
   alignment <- read.dna(filename, format = "fasta")
   dnds_ratio <- NA
   
-  if(sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2]) { # check for unique sequences
+  # dnds now throws an error if there are gaps, so remove them
+  alignment <- del.colgapsonly(alignment, threshold = 0.5)
+  
+  if(ncol(alignment) %% 3 == 0 & sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2]) { # check for unique sequences
     # although if two sequenes have the same number of !'s in alignment, can calculate dn/ds for some reason
     
     # calculate dn/ds
-    dnds_ratio <- dnds(alignment, quiet = TRUE)
+      dnds_ratio <- dnds(alignment, quiet = TRUE)
+
   }
   
   # get gene names
@@ -73,7 +78,7 @@ for (i in 1:total) {
 ```{r}
 # strange cases
 blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
-blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical or alignment was not multiple of 3
 blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
 blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] 
 ```
