@@ -85,13 +85,14 @@ blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ]
 
 ```{r}
 # load in interpro annotations
-interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv",
+# output.iprscan from Shared drives/TanOak/John_Maker/Round_2_USE_THIS_ONE/Additional files/output.iprscan
+interpro <- read_tsv("../output/output.iprscan",
                      col_names = c("protein_accession", "sequence_md5_digest", "sequence_length",
                                    "analysis", "signature_accession", "signature_description", "start_location",
                                    "stop_location", "score", "status", "date", "interpro_accession",
                                    "interpro_description", "GO_annotation", "pathways_annotation")
-                    ) %>%
-  separate(col = date, into = c("date", "interpro_accession", "interpro_description", "GO_annotation", "pathways_annotation"), sep = '\t')
+                    ) #%>%
+#  separate(col = date, into = c("date", "interpro_accession", "interpro_description", "GO_annotation", "pathways_annotation"), sep = '\t')
 
 # column names from https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html
 
