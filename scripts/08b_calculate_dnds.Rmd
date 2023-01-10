@@ -142,12 +142,28 @@ for (i in 1:length(go_annot)) {
   }
 }
 
+# remove "-mRNA-1" suffix from gene names
+blastp_dnds_annot_cleaned$tanoak <- blastp_dnds_annot_cleaned$tanoak %>% str_remove("-mRNA-1")
 blastp_dnds_annot_cleaned
 ```
 
+Update (1/10/21): filter out small genes. See 08d_GetFilteredGeneList.Rmd for more info
+```{r}
+filtered_gene_list <- read_csv("../input/filtered_genes_keep.csv")
+#filtered_gene_list
+
+# filter blastp_dnds_annot_cleaned by inner joining to filtered_gene_list
+blastp_dnds_annot_filt <- inner_join(filtered_gene_list, blastp_dnds_annot_cleaned, by = c("ID"="tanoak")) %>%
+  filter(!is.na(GO_annotations))
+dim(blastp_dnds_annot_filt)
+
+blastp_dnds_annot_filt
+```
+
+
 ```{r}
 # export (only run when needed)
-write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+write.table(blastp_dnds_annot_filt, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
 ```
 
 
