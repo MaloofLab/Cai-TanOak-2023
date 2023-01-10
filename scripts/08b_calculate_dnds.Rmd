@@ -157,6 +157,8 @@ blastp_dnds_annot_filt <- inner_join(filtered_gene_list, blastp_dnds_annot_clean
   filter(!is.na(GO_annotations))
 dim(blastp_dnds_annot_filt)
 
+colnames(blastp_dnds_annot_filt)[1] <- "tanoak"
+
 blastp_dnds_annot_filt
 ```
 
