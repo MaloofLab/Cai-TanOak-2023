@@ -11,18 +11,18 @@ In this version include XL assemblies
 library(tidyverse)
 library(VariantAnnotation)
 library(ggrepel)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak/vcf_with_xl/"
+datadir <- "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly"
 outdir <- "../output/"
 ```
 
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.XL.genotyped.vcf.gz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
 ## load contig lengths file 
-contig.lengths <- read_csv("../output/contigLengths.csv")
-
+contig.lengths <- read_delim(file.path(datadir, "PanGenome_ONT_pilon.purge.dedup90.drop2k.mergeN.fasta.fai"),
+                             col_names = c("name", "length"), col_select = 1:2)
 contig.lengths_tab <- contig.lengths %>%
   filter(name %in% tab_seqnames)
 ```
@@ -31,7 +31,13 @@ contig.lengths_tab <- contig.lengths %>%
 ## get pheno data
 pheno <- read_csv("../input/TanOakResistance.csv") %>%
   mutate(sampleID=str_replace_all(Tanoak, "-","."),
-         sampleID=str_replace(sampleID, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) %>%
+         sampleID={str_replace(sampleID, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2") %>%
+             str_replace("52.81", "SM.52.81.cl1") %>% 
+             str_replace("LP.22.54", "SM.52.81.cl2") %>%
+             str_replace("SM.54.45", "SM.74.45.cl1") %>%
+             str_replace("SM.54.26", "SM.74.45.cl2") %>%
+             str_replace("(^[0-9])", "SM.\\1")}
+  ) %>%
   arrange(Rank_Sorting)
 ```
 
@@ -61,6 +67,12 @@ getPCs <- function(trial) {
   
   mat3 <- mat3[,apply(mat3, 2, function(x) !any(is.na(x)))]
   
+  rownames(mat3) <- rownames(mat3) %>% 
+    str_replace("52.81", "SM.52.81.cl1") %>% 
+    str_replace("LP.22.54", "SM.52.81.cl2") %>%
+    str_replace("SM.54.45", "SM.74.45.cl1") %>%
+    str_replace("SM.54.26", "SM.74.45.cl2") %>%
+    str_replace("(^[0-9])", "SM.\\1")
   
   geno.pca <- prcomp(mat3, rank.=10)
   
@@ -83,7 +95,9 @@ getPCtibble <- function(geno.pca) {
 PCs <- geno.pca$x %>%
   as.data.frame() %>%
   rownames_to_column("sampleID") %>%
-  left_join(pheno)
+  mutate(sampleIDbase=str_remove(sampleID, "\\.XL")) %>%
+  left_join(pheno, by=c("sampleIDbase"="sampleID")) %>%
+  dplyr::select(-sampleIDbase)
 PCs
 }
 ```
@@ -128,18 +142,22 @@ results %>% dplyr::select(trial, PCtibble) %>%
   facet_wrap(~ trial, scales = "free") +
   theme(legend.position = "top")
 ggsave("../output/XL_PCA_length_100000000.pdf")
+
 ```
 
 
-```{r, fig.asp=1, fig.height=10}
+```{r, fig.asp=1}
 results %>% dplyr::select(trial, PCtibble) %>% 
   unnest(PCtibble) %>%
   filter(trial==3) %>%
-  ggplot(aes(x=PC1, y=PC2, color=Tolerance_Resistance, label=sampleID)) +
-  geom_text_repel(size=3) + 
-  geom_point() +
-  theme(legend.position = "top")
+  ggplot(aes(x=PC1, y=PC2, label=sampleID, color=Tolerance_Resistance)) +
+  geom_text_repel(size=4) + 
+  geom_point(size=3) +
+  theme_light() +
+  theme(legend.position = "top")#, axis.title = element_text(size=16), axis.text = element_text(size=12), legend.text = element_text(size=16)) 
 ggsave("../output/XL_PCA_length_100000000_single.pdf")
+ggsave("../output/XL_PCA_length_100000000_single.png")
+
 ```
 
 
