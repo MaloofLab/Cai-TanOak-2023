@@ -18,7 +18,7 @@ start=`date +%s`
 
 # Load modules
 
-module load interproscan/5.57-90.0
+module load interproscan/5.30-69.0
 # set up envrionment
 
 export IPS_CONFIG_DIR=/share/malooflab/Julin/git/TanOak/ipr_config
