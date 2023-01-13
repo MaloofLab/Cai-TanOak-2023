@@ -163,7 +163,7 @@ is_significant_FDR <- function(FDR) {
   FDR <= 0.5
 }
 
-FDR_filtered <- pvalues_FDR_transposed %>% filter(if_any(contains(".FDR"), is_significant)) %>%
+FDR_filtered <- pvalues_FDR_transposed %>% filter(if_any(contains(".FDR"), is_significant_FDR)) %>%
   dplyr::select(contains("GO"), contains(".FDR")) %>%
   mutate(GO_term_desc = str_c(GO_term, GO_desc, sep = "; "))
 FDR_filtered

@@ -1,0 +1,38 @@
+---
+title: "08d_GetFilteredGeneList"
+author: "Julin Maloof"
+date: "2023-01-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Ying has filtered the annotated genes to remove small transcripts with no BLAST support.  I have a gff.  I want to create a csv with the genes to keep.
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+filtered.gff <- read_delim("~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/John_Maker/Round_2_USE_THIS_ONE/TanOak2.gene.filtered.gff", col_names = FALSE)
+
+head(filtered.gff)
+```
+
+```{r}
+genelist <- filtered.gff %>%
+  select(ID=X9) %>%
+  mutate(ID= {
+    str_remove(ID, "ID=") %>%
+      str_remove(";Name=.*")
+  })
+
+genelist
+```
+
+```{r}
+genelist %>% write_csv("input/filtered_genes_keep.csv")
+```
+

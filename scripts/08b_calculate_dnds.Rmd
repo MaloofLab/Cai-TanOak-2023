@@ -25,6 +25,7 @@ library(stringr)
 # ! character from alignment software cannot be handled by ape when loading in fasta file, causing unequal
 # sequence lengths, need to convert those characters to '-' in all files
 
+#note for some reason this works on Barbera but not on Mac
 
 # replace ! with - in fasta files in the current directory
 grep -Rl '!' . | xargs sed -i 's/!/-/g'
@@ -53,11 +54,15 @@ for (i in 1:total) {
   alignment <- read.dna(filename, format = "fasta")
   dnds_ratio <- NA
   
-  if(sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2]) { # check for unique sequences
+  # dnds now throws an error if there are gaps, so remove them
+  alignment <- del.colgapsonly(alignment, threshold = 0.5)
+  
+  if(ncol(alignment) %% 3 == 0 & sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2]) { # check for unique sequences
     # although if two sequenes have the same number of !'s in alignment, can calculate dn/ds for some reason
     
     # calculate dn/ds
-    dnds_ratio <- dnds(alignment, quiet = TRUE)
+      dnds_ratio <- dnds(alignment, quiet = TRUE)
+
   }
   
   # get gene names
@@ -73,20 +78,21 @@ for (i in 1:total) {
 ```{r}
 # strange cases
 blastp_dnds[which(blastp_dnds$dnds_ratio == "Inf"), ]
-blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical
+blastp_dnds[which(is.na(blastp_dnds$dnds_ratio)), ] # sequences are identical or alignment was not multiple of 3
 blastp_dnds[which(blastp_dnds$dnds_ratio == "NaN"), ] 
 blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ] 
 ```
 
 ```{r}
 # load in interpro annotations
-interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv",
+# output.iprscan from Shared drives/TanOak/John_Maker/Round_2_USE_THIS_ONE/Additional files/output.iprscan
+interpro <- read_tsv("../output/output.iprscan",
                      col_names = c("protein_accession", "sequence_md5_digest", "sequence_length",
                                    "analysis", "signature_accession", "signature_description", "start_location",
                                    "stop_location", "score", "status", "date", "interpro_accession",
                                    "interpro_description", "GO_annotation", "pathways_annotation")
-                    ) %>%
-  separate(col = date, into = c("date", "interpro_accession", "interpro_description", "GO_annotation", "pathways_annotation"), sep = '\t')
+                    ) #%>%
+#  separate(col = date, into = c("date", "interpro_accession", "interpro_description", "GO_annotation", "pathways_annotation"), sep = '\t')
 
 # column names from https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html
 
@@ -136,12 +142,30 @@ for (i in 1:length(go_annot)) {
   }
 }
 
+# remove "-mRNA-1" suffix from gene names
+blastp_dnds_annot_cleaned$tanoak <- blastp_dnds_annot_cleaned$tanoak %>% str_remove("-mRNA-1")
 blastp_dnds_annot_cleaned
 ```
 
+Update (1/10/21): filter out small genes. See 08d_GetFilteredGeneList.Rmd for more info
+```{r}
+filtered_gene_list <- read_csv("../input/filtered_genes_keep.csv")
+#filtered_gene_list
+
+# filter blastp_dnds_annot_cleaned by inner joining to filtered_gene_list
+blastp_dnds_annot_filt <- inner_join(filtered_gene_list, blastp_dnds_annot_cleaned, by = c("ID"="tanoak")) %>%
+  filter(!is.na(GO_annotations))
+dim(blastp_dnds_annot_filt)
+
+colnames(blastp_dnds_annot_filt)[1] <- "tanoak"
+
+blastp_dnds_annot_filt
+```
+
+
 ```{r}
 # export (only run when needed)
-write.table(blastp_dnds_annot_cleaned, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+write.table(blastp_dnds_annot_filt, file = "../output/TanOak_blastp_orthologs_dnds.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
 ```
 
 
