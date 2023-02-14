@@ -57,6 +57,13 @@ oak_v_tanoak_blastp <- read_csv("../output/Oak_to_Tanoak_blastp.csv",
 head(oak_v_tanoak_blastp, 15)
 ```
 
+check names
+```{r}
+length(intersect(tanoak_v_oak_blastp$query_id, oak_v_tanoak_blastp$subject_id))
+length(intersect(oak_v_tanoak_blastp$query_id, tanoak_v_oak_blastp$subject_id))
+```
+
+
 ```{r}
 # find the difference of the order of magnitude in E value between hits
 
