@@ -5,9 +5,9 @@ date: '2022-05-11'
 output: html_document
 ---
 
-Goal is to look at the genes in the GO:0030247 Polysaccharide Binding and GO:0009055 Electron Transfer Activity categories with high dNdS.
+Goal is to look at the genes in the GO:0003677 DNA binding category with high dNdS.
 * What are their predicted functions
-* SNP polarity (does Tanoak or Oak have the ancesteral alleles?)
+* SNP polarity (does Tanoak or Oak have the ancestral alleles?)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -36,6 +36,7 @@ head(Atblast)
 
 ```{r}
 interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+#interpro <- read_tsv("../output/output.iprscan", col_names = FALSE)
 head(interpro)
 ```
 
@@ -44,44 +45,77 @@ head(interpro)
 
 Get the genes
 ```{r}
-polysaccharide_genes <- dn_ds %>% filter(all_go_terms=="GO:0030247", dnds >= 1.2)
-polysaccharide_genes
+DNA_binding_genes <- dn_ds %>% filter(all_go_terms=="GO:0003677", dnds >= 1.2)
+DNA_binding_genes
 ```
 
 interpro annotation
 
 ```{r}
-poly.interpro <- interpro %>% 
+dna.interpro <- interpro %>% 
   dplyr::select(genes=X1, description=X6 ) %>% 
+  mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
   unique() %>% 
   na.omit() %>% 
-  right_join(polysaccharide_genes, by="genes") %>%
+  right_join(DNA_binding_genes, by="genes") %>%
   group_by(genes) %>%
   summarize(interpro.description = str_c(description, collapse="; "), dnds=unique(dnds))
   
-poly.interpro
+dna.interpro
 ```
 
 Arabidopsis best hit and gene symbols (if any)
 
 ```{r}
-poly.at <- Atblast %>%
+dna.at <- Atblast %>%
   dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
-  right_join(poly.interpro) %>%
+  mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
+  right_join(dna.interpro) %>%
   group_by(genes) %>%
   slice_max(order_by=bitscore, n=1) %>%
   mutate(AGI=str_remove(AGI, "\\.[0-9]"),
-         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))) %>%
-  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything())
+         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))[[1]]) %>%
+  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything()) %>%
+  arrange(desc(dnds))
 
-poly.at
+dna.at
 ```
 
 ### Notes:
 
-* LRK10L2, 3 = LEAF RUST 10 DISEASE-RESISTANCE LOCUS RECEPTOR- LIKE PROTEIN KINASE-LIKE
-* ATL21 = ARABIDOPSIS TOXICOS EN LEVADURA 2 (ring, UBOX, E3?).  Note: does not fit with interpro description, wall associated kinase.
-* WAK2, WAK5, Wall associated kinase
+OBP2: A member of the DOF transcription factors. Prominently expressed in the phloem of leaves and other organs. Expression is induced by wounding, MeJA and insect feeding. Upregulates glucosinolate biosynthesis. PEAR protein involved in the formation of a short-range concentration gradient that peaks at protophloem sieve elements, and activates gene expression that promotes radial growth. Locally promotes transcription of inhibitory HD-ZIP III genes, and thereby establishes a negative-feedback loop that forms a robust boundary that demarks the zone of cell division.
+
+REM39 = VRN 1: Required for vernalization. Essential for the complete repression of FLC in vernalized plants. Required for the methylation of histone H3
+
+ATHAP5B: Other names: ATHAP5B, HAP5B, NF-YC2, NUCLEAR FACTOR Y, SUBUNIT C2
+Encodes a protein with similarity to a subunit of the CCAAT promoter motif binding complex of yeast.One of two members of this class (HAP5B) and expressed in vegetative and reproductive tissues. Involved in the regulation of response to nutrient levels.
+
+WOX1:  	Encodes a WUSCHEL-related homeobox gene family member with 65 amino acids in its homeodomain. Proteins in this family contain a sequence of eight residues (TLPLFPMH) downstream of the homeodomain called the WUS box. Its mRNA is expressed in the initiating vascular primordium of the cotyledons during heart and torpedo stages.
+
+PGA6 = WUS1: Homeobox gene controlling the stem cell pool. Expressed in the stem cell organizing center of meristems. Required to keep the stem cells in an undifferentiated state. Regulation of WUS transcription is a central checkpoint in stem cell control. The size of the WUS expression domain controls the size of the stem cell population through WUS indirectly activating the expression of CLAVATA3 (CLV3) in the stem cells and CLV3 repressing WUS transcription through the CLV1 receptor kinase signaling pathway. Repression of WUS transcription through AGAMOUS (AG) activity controls stem cell activity in the determinate floral meristem. Binds to TAAT element core motif. WUS is also involved in cell differentiation during anther development. Responds to CMV infection and represses virus accumulation in the meristem central and peripheral zones; inhibits viral protein synthesis by repressing the expression of plant S-adenosyl-L-methionine?dependent methyltransferases, which are involved in ribosomal RNA processing and ribosome stability.
+
+ATHB40: Encodes a homeodomain leucine zipper class I (HD-Zip I) protein.
+
+
+REM7 Encodes a member of the REM (Reproductive Meristem) gene family, a part of the B3 DNA-binding domain superfamily. Together with ATHB25 induces the expression of genes controlling shoot stem characteristics by ectopic expression in roots.
+
+Annotate All
+```{r}
+all.at <- Atblast %>%
+  dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
+  mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
+  right_join(interpro) %>%
+  group_by(genes) %>%
+  slice_max(order_by=bitscore, n=1) %>%
+  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
+         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))[[1]]) %>%
+  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything()) %>%
+  arrange(desc(dnds))
+
+all.at
+```
+
+STOPPED HERE
 
 Let's blast a few of these.  First create fasta file of interesting proteins:
 

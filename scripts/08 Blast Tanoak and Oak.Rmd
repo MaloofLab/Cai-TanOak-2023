@@ -35,9 +35,9 @@ makeblastdb -in Qrob_PM1N_CDS_nt_20161004.fa -dbtype nucl
 gunzip Qrob_PM1N_CDS_aa_20161004.fa.gz
 makeblastdb -in Qrob_PM1N_CDS_aa_20161004.fa -dbtype prot
 
-makeblastdb -in PanGenome_ONT_pilon.all.maker.transcripts.fasta -dbtype nucl
+makeblastdb -in TanOak.transcripts.fa -dbtype nucl
 
-makeblastdb -in PanGenome_ONT_pilon.all.maker.proteins.fasta -dbtype prot
+makeblastdb -in TanOak.proteins.fa -dbtype prot
 ```
 
 ## nucleotide blast
@@ -46,7 +46,7 @@ Tanoak to Oak
 
 ```{bash}
 cd ../input/blast
-time blastn -query PanGenome_ONT_pilon.all.maker.transcripts.fasta \
+time blastn -query TanOak.transcripts.fa \
   -db Qrob_PM1N_CDS_nt_20161004.fa \
   -strand plus \
   -task dc-megablast \
@@ -63,7 +63,7 @@ Oak to Tanoak
 ```{bash}
 cd ../input/blast
 time blastn -query Qrob_PM1N_CDS_nt_20161004.fa \
-  -db PanGenome_ONT_pilon.all.maker.transcripts.fasta  \
+  -db TanOak.transcripts.fa  \
   -strand plus \
   -task dc-megablast \
   -outfmt '10 std qlen slen' \
@@ -80,7 +80,7 @@ Tanoak to Oak
 
 ```{bash}
 cd ../input/blast
-time blastp -query PanGenome_ONT_pilon.all.maker.proteins.fasta \
+time blastp -query TanOak.proteins.fa \
   -db Qrob_PM1N_CDS_aa_20161004.fa \
   -outfmt '10 std qlen slen' \
   -max_target_seqs 5 \
@@ -95,7 +95,7 @@ Oak to Tanoak
 ```{bash}
 cd ../input/blast
 time blastp -query Qrob_PM1N_CDS_aa_20161004.fa \
-  -db PanGenome_ONT_pilon.all.maker.proteins.fasta  \
+  -db TanOak.proteins.fa  \
   -outfmt '10 std qlen slen' \
   -max_target_seqs 5 \
   -max_hsps 1 \
