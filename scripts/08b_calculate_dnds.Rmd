@@ -13,7 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # load in libraries
 library(tidyverse)
 library(Biostrings)
-library(ape)
 library(seqinr)
 library(stringr)
 ```
@@ -32,6 +31,11 @@ grep -Rl '!' . | xargs sed -i 's/!/-/g'
 
 ```
 
+
+```{r}
+table(blastp_dnds$outcome)
+```
+
 ```{r}
 # for each output file, get the filepath, calculate dn/ds, save the value
 # what is the output going to look like? what would be useful/helpful?
@@ -43,37 +47,40 @@ files <- list.files(path_prefix)
 total <- list.files(path_prefix) %>% length()
 
 # initialize empty dataframe
-blastp_dnds <- data.frame(matrix(0, ncol = 3, nrow = total))
-colnames(blastp_dnds) <- c("tanoak", "oak", "dnds_ratio")
+blastp_dnds <- data.frame(matrix(0, ncol = 4, nrow = total))
+colnames(blastp_dnds) <- c("tanoak", "oak", "dnds_ratio", "outcome")
 
 for (i in 1:total) {
+  
+  if(i %% 100 == 0) cat(paste0(i, " "))
+
   # get file path
   filename <- paste0(path_prefix, files[i])
   
   # load in fasta file
-  alignment <- read.dna(filename, format = "fasta")
+  alignment <- read.alignment(filename, format = "fasta")
   dnds_ratio <- NA
+  outcome <- NA
   
-  # dnds now throws an error if there are gaps, so remove them
-  alignment <- del.colgapsonly(alignment, threshold = 0.5)
-  
-  if(ncol(alignment) %% 3 == 0 & sum(as.character(alignment)[1, ] == as.character(alignment)[2, ]) != dim(alignment)[2]) { # check for unique sequences
-    # although if two sequenes have the same number of !'s in alignment, can calculate dn/ds for some reason
-    
-    # calculate dn/ds
-      dnds_ratio <- dnds(alignment, quiet = TRUE)
-
-  }
+      dnds <- kaks(alignment)
+      
+      dnds_ratio <- dnds$ka/dnds$ks
+      
+      if(is.na(dnds_ratio)) outcome <- "dnds NA" else outcome <- "OK"
   
   # get gene names
   tanoak <- str_replace(files[i], "--.*", "")
   oak <- str_replace(files[i], ".*--(.*).nt.fasta", "\\1")
   
   # add to dataframe
-  blastp_dnds[i, ] = c(tanoak, oak, dnds_ratio)
+  blastp_dnds[i, ] = c(tanoak, oak, dnds_ratio, outcome)
 }
-
 ```
+
+```{r}
+table(blastp_dnds$outcome)
+```
+
 
 ```{r}
 # strange cases
@@ -85,7 +92,7 @@ blastp_dnds[which(blastp_dnds$dnds_ratio < 0), ]
 
 ```{r}
 # load in interpro annotations
-interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv",
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz",
                      col_names = c("protein_accession", "sequence_md5_digest", "sequence_length",
                                    "analysis", "signature_accession", "signature_description", "start_location",
                                    "stop_location", "score", "status", "date", "interpro_accession",

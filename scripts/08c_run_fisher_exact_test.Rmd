@@ -62,10 +62,11 @@ write_csv(gene_sets_dnds_long, "../output/gene_sets_dnds_long.csv")
 bin_dnds_values <- function(dnds_ratio) {
   bin <- rep(0, dim(gene_sets_dnds_long)[1])
   
-  bin <- ifelse(dnds_ratio < 0.1, 5,
-         ifelse(dnds_ratio >= 0.1 & dnds_ratio < 0.3, 4,
-         ifelse(dnds_ratio >= 0.3 & dnds_ratio < 0.8, 3,
-         ifelse(dnds_ratio >= 0.8 & dnds_ratio < 1.2, 2, 1))))
+  bin <- ifelse(dnds_ratio < 0.1, 6,
+         ifelse(dnds_ratio >= 0.1 & dnds_ratio < 0.3, 5,
+         ifelse(dnds_ratio >= 0.3 & dnds_ratio < 0.8, 4,
+         ifelse(dnds_ratio >= 0.8 & dnds_ratio < 1.2, 3,
+         ifelse(dnds_ratio >= 1.2 & dnds_ratio < 1.4, 2,1)))))
 }
 
 gene_sets_bins_long <- gene_sets_dnds_long %>% mutate(bin = bin_dnds_values(dnds), present = 1) %>% 
@@ -98,7 +99,7 @@ total <- GO_bin_counts %>% dplyr::select(starts_with("GO:")) %>% sum()
 # init output matrix
 unadj_pvalues <- data.frame(matrix(0, nrow = dim(GO_bin_counts)[1], ncol = dim(GO_bin_counts)[2]))
 colnames(unadj_pvalues) <- colnames(GO_bin_counts)
-unadj_pvalues[, 1] <- 1:5 # first col is bins
+unadj_pvalues[, 1] <- 1:6 # first col is bins
 
 # perform fisher's exact test for each GO and bin combination
 for (i in 1:dim(GO_bin_counts)[1]) {
@@ -143,12 +144,14 @@ goterms_table <- tibble(GO_term = names(goterms), GO_desc = goterms)
 pvalues_FDR_transposed <- unadj_pvalues %>% pivot_longer(-bin, names_to = "GO_term", values_to = "p.value") %>%
   pivot_wider(names_from = bin, values_from = p.value) %>%
   left_join(goterms_table, by = "GO_term") %>% # join GO descriptions
-  dplyr::select(GO_term, GO_desc, `5`, `4`, `3`, `2`, `1`) %>% # reverse the order. 5 = low dn/ds bin and 1 = high dn/ds bin
-  mutate(`5.FDR` = p.adjust(`5`, method = "fdr"),
+  dplyr::select(GO_term, GO_desc, `6`, `5`, `4`, `3`, `2`, `1`) %>% # reverse the order. 5 = low dn/ds bin and 1 = high dn/ds bin
+  mutate(`6.FDR` = p.adjust(`6`, method = "fdr"),
+         `5.FDR` = p.adjust(`5`, method = "fdr"),
          `4.FDR` = p.adjust(`4`, method = "fdr"),
          `3.FDR` = p.adjust(`3`, method = "fdr"),
          `2.FDR` = p.adjust(`2`, method = "fdr"),
          `1.FDR` = p.adjust(`1`, method = "fdr"),
+         `6.Bon` = p.adjust(`6`, method = "bonferroni"),
          `5.Bon` = p.adjust(`5`, method = "bonferroni"),
          `4.Bon` = p.adjust(`4`, method = "bonferroni"),
          `3.Bon` = p.adjust(`3`, method = "bonferroni"),
@@ -190,12 +193,12 @@ getwd()
 # bin 4: dn/ds >= 0.1 & dn/ds < 0.3
 # bin 5: dn/ds < 0.1
 
-colnames(FDR_filtered) <- c("GO_term", "GO_desc", "< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", ">= 1.2", "GO_term_desc")
+colnames(FDR_filtered) <- c("GO_term", "GO_desc", "< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", "1.2 - 1.39", ">= 1.4", "GO_term_desc")
 
 FDR_filtered %>% pivot_longer(-c(contains("GO")), names_to = "bins", values_to = "FDR") %>%
   mutate(bins = as.factor(bins)) %>%
   mutate(FDR_cut = cut(FDR, c(0, 0.01, 0.05, 0.25, 0.5, 1), labels = c("<= 0.01", "0.01 - 0.05", "0.05 - 0.25", "0.25 - 0.5", "> 0.5"))) %>%
-  ggplot(aes(x = factor(bins, levels = c("< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", ">= 1.2")), 
+  ggplot(aes(x = factor(bins, levels = c("< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", "1.2 - 1.39", ">= 1.4")), 
              y = GO_term_desc, fill = FDR_cut)) + geom_tile() +
   scale_fill_brewer(type = "seq", palette = "Greys", direction = -1) +
   labs(x = "dn/ds bins", y = "", fill = "FDR") +
