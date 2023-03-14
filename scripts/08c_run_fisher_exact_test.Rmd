@@ -171,10 +171,11 @@ FDR_filtered <- pvalues_FDR_transposed %>% filter(if_any(contains(".FDR"), is_si
   mutate(GO_term_desc = str_c(GO_term, GO_desc, sep = "; "))
 #FDR_filtered
 
-# GO:0055114 description from GO.db is NA, looking the description online the description is
-# oxidation-reduction process
+# GO:0008565 description from GO.db is NA, looking the description online the description is
+# obsolete
 # hard code description for now
-FDR_filtered[which(FDR_filtered$GO_term == "GO:0055114"), "GO_term_desc"] <- "GO:0055114; oxidation-reduction process"
+which(is.na(FDR_filtered$GO_desc))
+FDR_filtered[which(FDR_filtered$GO_term == "GO:0008565"), "GO_term_desc"] <- "GO:0008565"
 FDR_filtered
 
 # str_c
