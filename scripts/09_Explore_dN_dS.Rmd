@@ -1,7 +1,7 @@
 ---
 title: "09_Explore_dN_dS"
 author: "Julin Maloof"
-date: '2022-05-11'
+date: 'updated 2023-04-24'
 output: html_document
 ---
 
@@ -99,8 +99,19 @@ __AT-HSFA3__ Member of Heat Stress Transcription Factor (Hsf) family. Expression
 
 
 
-Annotate All
+Annotate All    NOT WORKING...NEED TO REMOVE REDUNDANCY /PIVOT WIDER AND COMBINE COLUMNS, OR SOMETHING
 ```{r}
+all.interpro <- interpro %>% 
+  dplyr::select(genes=X1, description=X6 ) %>% 
+  mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
+  unique() %>% 
+  na.omit() %>% 
+  right_join(dn_ds, by="genes") %>%
+  group_by(genes) %>%
+  summarize(interpro.description = str_c(description, collapse="; "), dnds=unique(dnds))
+  
+dna.interpro
+
 all.at <- Atblast %>%
   dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
   mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
@@ -115,59 +126,15 @@ all.at <- Atblast %>%
 all.at
 ```
 
-STOPPED HERE
 
 Let's blast a few of these.  First create fasta file of interesting proteins:
 
 ```{r}
-peps <- readAAStringSet("../input/blast/12_21_tanoak_aa.fa")
-peps <- peps[polysaccharide_genes$genes]
+peps <- readAAStringSet("../input/blast/TanOak.proteins.fa")
+names(peps) <- names(peps) %>% str_remove("-mRNA-.*")
+peps <- peps[DNA_binding_genes$genes]
 peps
-writeXStringSet(peps, "../output/polysaccharide_peps.fa")
+writeXStringSet(peps, "../output/DNA_binding_peps.fa")
 ```
-
-
-Blast: many have hits to LRK10L
-
-
-## Electron Transfer
-
-Get the genes
-```{r}
-electron_xfer_genes <- dn_ds %>% filter(all_go_terms=="GO:0009055", dnds >= 1.2)
-electron_xfer_genes
-```
-
-interpro annotation
-
-```{r}
-e_xfer.interpro <- interpro %>% 
-  dplyr::select(genes=X1, description=X6 ) %>% 
-  unique() %>% 
-  na.omit() %>% 
-  right_join(electron_xfer_genes, by="genes") %>%
-  group_by(genes) %>%
-  summarize(interpro.description = str_c(description, collapse="; "), dnds=unique(dnds))
-  
-e_xfer.interpro
-```
-
-Arabidopsis best hit and gene symbols (if any)
-
-```{r}
-e_xfer.at <- Atblast %>%
-  dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
-  right_join(e_xfer.interpro) %>%
-  group_by(genes) %>%
-  slice_max(order_by=bitscore, n=1) %>%
-  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
-         AT.symbol = unlist(map(as.list(org.At.tairSYMBOL[AGI]), str_c, collapse="; "))) %>%
-  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything())
-
-e_xfer.at
-```
-
-### Notes:
-
 
 
