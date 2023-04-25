@@ -15,7 +15,7 @@ library(gplots)
 ```
 
 
-## Sequence retrieval
+## Homolog Sequence retrieval
 
 Start with blastp of `../output/DNA_binding_peps.fa`
 
@@ -27,24 +27,24 @@ Used phyotozome blastp tool against:
 * Gmax_Wm82_a4_v1_508.proteome;
 * Ptrichocarpa_v4_1_533.proteome
 
-Job is at https://phytozome-next.jgi.doe.gov/blast-results/589527
 
-Results table, retrieved peptides and cDNAs are in `output/blastp/polysaccharide_Seq_downloads/phytozome_blastp
-
+Results table, retrieved peptides and cDNAs are in `output/DNA_binding_downloads`
 
 ## Sequence overlap
 
 Have common sequences been retrieved for the different queries?
 
 ```{r}
-hittable <- read_tsv("../output/polysaccharide_seq_downloads/phytozome_blastp/phytozome_polysach_blastp_071522.tsv",
+hittable <- read_tsv("../output/DNA_binding_downloads/DNA_Binding_Blast.tsv",
                      name_repair = make.names) %>%
   select(-1) %>%
-  mutate(fasta.name = str_c({str_replace(Species, " ", "_") %>% str_replace("\\.", "") },
-                            str_extract(Protein, "[A-Za-z]*\\.?[A-Za-z0-9]*"),
-                            sep="|") ) 
+  mutate(gene.name = str_remove(Protein, "\\.[0-9]{1,2}(\\.p)?$"),
+         Protein = str_remove(Protein, "\\.p$")) %>% # to match fasta file
+  group_by(Query.ID, gene.name) %>%
+  slice_max(Bitscore) %>% # one best hit per Query/ Subject
+  ungroup()
 
-head(hittable)
+hittable
 ```
 
 ```{r, fig.width=8}
@@ -56,20 +56,36 @@ hit.counts <- hittable %>% select(Protein, Query.ID) %>%
 upset(hit.counts, nsets = 10, nintersects = 50)
 ```
 
-70100 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal; LRK10L3),  
-445 (Wall-associated receptor kinase galacturonan-binding; Wall-associated receptor kinase C-terminal); NA
-Are unique:
+## load Tanoak DNA_binding sequences
+```{r}
+tanoak_dna_bind_aa <- readAAStringSet("../output/DNA_binding_peps.fa")
+```
 
-585 (NA; LRK10L2) and   
-804 (Wall-associated receptor kinase galacturonan-binding; ATL21) can be grouped together
+## load all Tanoak sequences:
 
-781 (EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Serine/Threonine protein kinases active-site signature.; Protein kinase domain; Wall-associated kinase; EGF_CA; Protein kinase domain profile. ;WAK5	)  AND  
-74803 (Calcium-binding EGF-like domain signature.; EGF-like domain profile.; Wall-associated receptor kinase galacturonan-binding; Calcium-binding EGF domain; EGF_CA; EGF-like domain signature 2.; Aspartic acid and asparagine hydroxylation site.; WAK2	)  can be grouped together
+```{r}
+tanoak_aa <- readAAStringSet("../input/blast/TanOak.proteins.fa")
+names(tanoak_aa) <- names(tanoak_aa) %>% str_remove("-mRNA-.*")
+```
 
-70081 (NA; ATL21),   
-72558 (Wall-associated receptor kinase galacturonan-binding; ATL21), and   
-833 (Wall-associated receptor kinase galacturonan-binding; ATL21), AND
-74056 (NA; ATL96) can be grouped together
+
+## Load blast sequences
+
+```{r}
+#blast results
+blast_peps <- readAAStringSet("../output/DNA_binding_downloads/DNA_Binding_Blast.fas.txt")
+names(blast_peps) <- names(blast_peps) %>% str_remove(".*\\|") # get it to match hittable$Protein
+```
+
+## original oak Qrob orthologs
+
+```{r}
+blastp_ortho <- read_csv("../output/tanoak_oak_blastp_orthologs.csv") %>%
+  mutate(query_id=str_remove(query_id, "-mRNA-.*"))
+#read the Oak AA sequences and fix names
+qrobAA <- readAAStringSet("../input/blast/Qrob_PM1N_CDS_aa_20161004.fa")
+names(qrobAA) <- str_remove(names(qrobAA), " .*") #get rid of extra space and numbers
+```
 
 ## Qrob homologs
 
@@ -77,7 +93,7 @@ Do blast to get all Qrob homologs
 
 ```{bash, eval=FALSE}
 cd ../input/blast
-blastp -query ../../output/polysaccharide_peps.fa -db Qrob_PM1N_CDS_aa_20161004.fa -outfmt 7 > ../../output/polysaccharide_Qrob_blast.tsv
+blastp -query ../../output/DNA_binding_peps.fa -db Qrob_PM1N_CDS_aa_20161004.fa -outfmt 7 > ../../output/DNA_binding_Qrob_blast.tsv
 ```
 
 ```{r}
@@ -87,148 +103,234 @@ header <- str_split("query acc.ver, subject acc.ver, % identity, alignment lengt
   str_replace(fixed(".."), ".") %>%
   str_replace("X", "pct")
 
-Qrob_hittable <- read_tsv("../output/polysaccharide_Qrob_blast.tsv", comment = "#", col_names = header)
+Qrob_hittable <- read_tsv("../output/DNA_binding_Qrob_blast.tsv", comment = "#", col_names = header)
 
 Qrob_hittable
 ```
 
 
-## 804 and 585
+## 1014 and 542
 
-Let's start with 804 and 585.  Need to get TanOak proteins, Oak proteins, and the blast results in one file.  Then align and make tree.
+Let's start with 1014 and 542.  These are the DOG1 domain containing proteins, and 1014 best A.t. his is RAS1.  Need to get TanOak proteins, Oak proteins, and the blast results in one file.  Then align and make tree.
 
 ```{r}
-#table of 804 and 585 hits 
-hits_804_585 <- hittable %>%
-  filter(Query.ID %in% c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
-                         "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")) %>%
-  filter(!duplicated(fasta.name))
+#table of 1014 and 542 hits 
+hits_1014_542 <- hittable %>%
+  filter(Query.ID %in% c("augustus-1014_pilon-processed-gene-5.8",
+                         "augustus-542_pilon-processed-gene-26.72")) %>%
+  filter(!duplicated(gene.name))
 
-#blast results
-polysach_peps <- readAAStringSet("../output/polysaccharide_seq_downloads/phytozome_blastp/phytozome_polysach_blastp_pep_071522.fa.gz")
-
-homologs_804_585 <- polysach_peps[hits_804_585$fasta.name]
+homologs_1014_542 <- blast_peps[hits_1014_542$Protein]
 
 #add tanoak
-tanoak_poly_aa <- readAAStringSet("../output/polysaccharide_peps.fa")
 
-homologs_804_585 <- c(tanoak_poly_aa[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
-                                       "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")],
-                      homologs_804_585)
+homologs_1014_542 <- c(tanoak_dna_bind_aa[c("augustus-1014_pilon-processed-gene-5.8",
+                                            "augustus-542_pilon-processed-gene-26.72")],
+                       homologs_1014_542)
 
 
-#to get the oak protein orthologs, load in the blastp table
-
-blastp_ortho <- read_csv("../output/tanoak_oak_blastp_orthologs.csv")
+#to get the oak protein orthologs
 
 # filter for those that we want
-oak_804_585_orthos <- blastp_ortho %>%
-  filter(str_detect(query_id, "augustus_masked-585_pilon-processed-gene-3\\.11-mRNA-1|augustus_masked-804_pilon-processed-gene-0\\.1-mRNA-1"))
+oak_1014_542_orthos <- blastp_ortho %>%
+  filter(str_detect(query_id, "augustus-1014_pilon-processed-gene-5.8|augustus-542_pilon-processed-gene-26.72"))
 
-#read the Oak AA sequences and fix names
-qrobAA <- readAAStringSet("../input/blast/Qrob_PM1N_CDS_aa_20161004.fa")
-names(qrobAA) <- str_remove(names(qrobAA), " .*") #get rid of extra space and numbers
-
-qrobAA_804_585_orthtos <- qrobAA[oak_804_585_orthos$subject_id]
+qrobAA_1014_542_orthos <- qrobAA[oak_1014_542_orthos$subject_id]
 
 #add "ortho" to name to make it clear
-names(qrobAA_804_585_orthtos) <- str_c(names(qrobAA_804_585_orthtos), "_orttho")
+names(qrobAA_1014_542_orthos) <- str_c(names(qrobAA_1014_542_orthos), "_ortho")
 
 #add oak
-homologs_804_585 <- c(qrobAA_804_585_orthtos,
-                      homologs_804_585)
+homologs_1014_542 <- c(qrobAA_1014_542_orthos,
+                       homologs_1014_542)
 
-homologs_804_585
+homologs_1014_542
 ```
 
 now add other Qrob orthologs:
 ```{r}
 # get them:
-Qrob_hits_804_585 <- Qrob_hittable %>%
-  filter(query.acc.ver %in% c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
-                              "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1"),
+Qrob_hits_1014_542 <- Qrob_hittable %>%
+  filter(query.acc.ver %in% c("augustus-1014_pilon-processed-gene-5.8",
+                              "augustus-542_pilon-processed-gene-26.72"),
          !duplicated(subject.acc.ver),
          bit.score >= 100) %>%
   pull(subject.acc.ver)
 
-qrob_804_585_homologs <- qrobAA[Qrob_hits_804_585]
+qrob_1014_542_homologs <- qrobAA[Qrob_hits_1014_542]
 
-homologs_804_585 <- c(homologs_804_585, qrob_804_585_homologs)
+homologs_1014_542 <- c(homologs_1014_542, qrob_1014_542_homologs)
 ```
 
 
 ## Other Tanoak homologs
 
-I should also get similar Tanoak homologs.  For this I need to blast 804 and 585 against the Tanoak peptides
+I should also get similar Tanoak homologs.  For this I need to blast 1014 and 542 against the Tanoak peptides
 
 ```{r}
-writeXStringSet(tanoak_poly_aa[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1",
-                                       "augustus_masked-804_pilon-processed-gene-0.1-mRNA-1")],
-                "../output/tanoak_804_585_aa.fa")
+writeXStringSet(tanoak_dna_bind_aa[c("augustus-1014_pilon-processed-gene-5.8",
+                                     "augustus-542_pilon-processed-gene-26.72")],
+                "../output/tanoak_1014_542_aa.fa")
 ```
 
 ```{bash, eval=FALSE}
 cd ../input/blast
-makeblastdb -in 12_21_tanoak_aa.fa -dbtype prot
-```
+blastp -query ../../output/tanoak_1014_542_aa.fa -db TanOak.proteins.fa -outfmt 7 > ../../output/1014_542_vs_Tanoak_blastp.tsv
 
-
-```{bash, eval=FALSE}
-cd ../input/blast
-blastp -query ../../output/tanoak_804_585_aa.fa -db 12_21_tanoak_aa.fa -outfmt 7 > ../../output/804_585_vs_Tanoak_blastp.tsv
- 
 ```
 
 ```{r}
-hits_tanoak_804_585 <- read_tsv("../output/804_585_vs_Tanoak_blastp.tsv",
-                                comment = "#",
-                                col_names = header) %>%
+hits_tanoak_1014_542 <- read_tsv("../output/1014_542_vs_Tanoak_blastp.tsv",
+                                 comment = "#",
+                                 col_names = header) %>%
   filter(evalue < 1e-5,
          !subject.acc.ver %in% unique(query.acc.ver),
-         !duplicated(subject.acc.ver))
-
-hits_tanoak_804_585
+         !duplicated(subject.acc.ver)) %>%
+  mutate(subject.acc.ver = str_remove(subject.acc.ver, "-mRNA-.*"))
 ```
 
-### retreive the TanOak sequences and add
+### extract the TanOak sequences and add
 ```{r}
-Tanoak_aa <- readAAStringSet("../input/blast/12_21_tanoak_aa.fa")
-Tanoak_804_585_paralogs <- Tanoak_aa[hits_tanoak_804_585$subject.acc.ver]
-homologs_804_585 <- c(homologs_804_585, Tanoak_804_585_paralogs)
+tanoak_1014_542_paralogs <- tanoak_aa[hits_tanoak_1014_542$subject.acc.ver]
+homologs_1014_542 <- c(homologs_1014_542, tanoak_1014_542_paralogs)
 ```
 
 ## Prune short sequences
 ```{r}
-homologs_804_585 <- homologs_804_585[nchar(homologs_804_585) > 199]
+med_length <- median(nchar(homologs_1014_542))
+homologs_1014_542 <- homologs_1014_542[nchar(homologs_1014_542) > 0.5*med_length & nchar(homologs_1014_542) < 2*med_length]
 ```
 
 ## write out the table
 ```{r}
-names(homologs_804_585) <- str_remove(names(homologs_804_585), ".*\\|")
-writeXStringSet(homologs_804_585, "../output/tanoak_804_585_orthos.fa")
+names(homologs_1014_542) <- str_remove(names(homologs_1014_542), ".*\\|")
+homologs_1014_542 <- homologs_1014_542[!duplicated(names(homologs_1014_542))]
+writeXStringSet(homologs_1014_542, "../output/tanoak_1014_542_orthos.fa")
 ```
 
 ## align!
 ```{bash, eval=TRUE}
-time mafft --thread 8 --localpair --maxiterate 1000 --reorder ../output/tanoak_804_585_orthos.fa > ../output/tanoak_804_585_orthos_aligned.fa
+time mafft --thread 8 --localpair --maxiterate 1000 --reorder ../output/tanoak_1014_542_orthos.fa > ../output/tanoak_1014_542_orthos_aligned.fa
 ```
 
 ## prune alignment
 
 ```{r}
-aligned <- readAAMultipleAlignment("../output/tanoak_804_585_orthos_aligned.fa")
+aligned <- readAAMultipleAlignment("../output/tanoak_1014_542_orthos_aligned.fa")
 aligned <- maskGaps(aligned, min.fraction=0.50, min.block.width=10)
 maskedratio(aligned)
 
-writeXStringSet(as(aligned, "AAStringSet"), "../output/tanoak_804_585_orthos_aligned_pruned.fa")
+writeXStringSet(as(aligned, "AAStringSet"), "../output/tanoak_1014_542_orthos_aligned_pruned.fa")
 ```
 
 
 ## build tree
 ```{bash, eval=TRUE}
 cd ../output
-FastTreeMP tanoak_804_585_orthos_aligned_pruned.fa > tanoak_804_585_orthos.tre
+FastTreeMP tanoak_1014_542_orthos_aligned_pruned.fa > tanoak_1014_542_orthos.tre
 ```
+
+
+## Make a function or functions to do above
+
+
+```{r}
+
+get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_peps, blastp_ortho=blastp_ortho, Qrob_hittable=Qrob_hittable, qrobAA=qrobAA, tanoak_aa=tanoak_aa, tanoak_dna_bind_aa=tanoak_dna_bind_aa) {
+  
+  
+  # get the blast hits
+  hits <- hittable %>%
+    filter(Query.ID %in% ids) %>%
+    filter(!duplicated(gene.name))
+  
+  homologs <- blast_peps[hits2$Protein]
+  
+  #add tanoak
+  
+  targets <- tanoak_dna_bind_aa[ids]
+  
+  names(targets) <- names(targets) %>% str_c("target_", .)
+  homologs <- c(targets, homologs)
+  
+  # get the oak protein orthologs
+  
+  # filter for those that we want
+  oak_orthos <- blastp_ortho %>%
+    filter(query_id %in% ids)
+  
+  qrobAA_orthos <- qrobAA[oak_orthos$subject_id]
+  
+  #add "ortho" to name to make it clear
+  names(qrobAA_orthos) <- str_c(names(qrobAA_orthos), "_ortho")
+  
+  #add oak
+  homologs <- c(qrobAA_orthos, homologs)
+  
+  
+  # now add other Qrob homologs:
+  
+  Qrob_hits <- Qrob_hittable %>%
+    filter(query.acc.ver %in% ids,
+           !duplicated(subject.acc.ver),
+           bit.score >= 100) %>%
+    pull(subject.acc.ver)
+  
+  qrob_homologs <- qrobAA[Qrob_hits]
+  
+  homologs <- c(homologs, qrob_homologs)
+  
+  # Other Tanoak homologs
+  
+  if(!dir.exists("_tmp")) dir.create("_tmp")
+  
+  writeXStringSet(tanoak_dna_bind_aa[ids], "_tmp/tanoak_tmp_aa.fa")
+  
+  system("blastp -query _tmp/tanoak_tmp_aa.fa -db ../input/blastTanOak.proteins.fa -outfmt 7 > tmp/tmp_vs_Tanoak_blastp.tsv")
+  
+  hits_tanoak <- read_tsv("../tmp/tmp_vs_Tanoak_blastp.tsv",
+                          comment = "#",
+                          col_names = header) %>%
+    filter(evalue < 1e-5,
+           !subject.acc.ver %in% unique(query.acc.ver),
+           !duplicated(subject.acc.ver)) %>%
+    mutate(subject.acc.ver = str_remove(subject.acc.ver, "-mRNA-.*"))
+  
+  # extract the TanOak sequences and add
+  
+  tanoak_paralogs <- tanoak_aa[hits_tanoak$subject.acc.ver]
+  homologs <- c(homologs, tanoak_paralogs)
+  
+  # Prune short sequences
+  med_length <- median(nchar(homologs))
+  homologs <- homologs[nchar(homologs) > 0.5*med_length & nchar(homologs) < 2*med_length]
+  
+  
+  # write out the table
+  names(homologs) <- str_remove(names(homologs), ".*\\|")
+  homologs <- homologs[!duplicated(names(homologs))]
+  writeXStringSet(homologs, "tmp/tmp_tanoak_orthos.fa")
+  
+  ## align!
+  
+  system2("mafft",
+          args = c("--thread 8", "--localpair", "--maxiterate 1000", "--reorder", "tmp/tanoak_tanoak_orthos.fa"),
+          stdout=str_c("../output/", filestem, "_orthos_aligned.fa"))
+  
+  # prune alignment
+  
+  aligned <- readAAMultipleAlignment(str_c("../output/", filestem, "_orthos_aligned.fa"))
+  aligned <- maskGaps(aligned, min.fraction=0.50, min.block.width=10)
+  maskedratio(aligned)
+  
+  writeXStringSet(as(aligned, "AAStringSet"), str_c("../output/", filestem, "_orthos_aligned_pruned.fa"))
+  
+  # build tree
+  system2("FastTreeMP", args=str_c("../output/", filestem, "_orthos_aligned_pruned.fa"),
+          stdout = str_c("../output/", filestem, "_orthos.tre"))
+}
+```
+
 
 ## Export Tanoak, oak, and chestnut sequences:
 
