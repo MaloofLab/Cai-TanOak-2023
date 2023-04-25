@@ -75,7 +75,7 @@ dna.at <- Atblast %>%
   slice_max(order_by=bitscore, n=1) %>%
   mutate(AGI=str_remove(AGI, "\\.[0-9]"),
          AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))[[1]]) %>%
-  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything()) %>%
+  dplyr::select(genes, AT.symbol, AGI, interpro.description, everything()) %>%
   arrange(desc(dnds))
 
 dna.at
