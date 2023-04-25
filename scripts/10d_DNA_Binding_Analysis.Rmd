@@ -3,7 +3,7 @@ title: "Explore DNA Binding"
 output: html_notebook
 ---
 
-The GO categor DNA binding is enriched for high dNdS genes.   The goal here is to align the TanOak genes with other related homologs, build a tree, and see where changes are happening.
+The GO category DNA binding is enriched for high dNdS genes.   The goal here is to align the TanOak genes with other related homologs, build a tree, and see where changes are happening.
 
 Previously I blasted against the NR database, and that was a bit of a mess for building a tree.  Will try again, but with BLAST against selected organisms.
 
@@ -236,19 +236,19 @@ FastTreeMP tanoak_1014_542_orthos_aligned_pruned.fa > tanoak_1014_542_orthos.tre
 
 ```{r}
 
-get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_peps, blastp_ortho=blastp_ortho, Qrob_hittable=Qrob_hittable, qrobAA=qrobAA, tanoak_aa=tanoak_aa, tanoak_dna_bind_aa=tanoak_dna_bind_aa) {
+get_homologs_tree <- function(ids, filestem, my.hittable=hittable, my.blast_peps=blast_peps, my.blastp_ortho=blastp_ortho, my.Qrob_hittable=Qrob_hittable, my.qrobAA=qrobAA, my.tanoak_aa=tanoak_aa, my.tanoak_dna_bind_aa=tanoak_dna_bind_aa) {
   
   
   # get the blast hits
-  hits <- hittable %>%
+  hits <- my.hittable %>%
     filter(Query.ID %in% ids) %>%
     filter(!duplicated(gene.name))
   
-  homologs <- blast_peps[hits2$Protein]
+  homologs <- my.blast_peps[hits$Protein]
   
   #add tanoak
   
-  targets <- tanoak_dna_bind_aa[ids]
+  targets <- my.tanoak_dna_bind_aa[ids]
   
   names(targets) <- names(targets) %>% str_c("target_", .)
   homologs <- c(targets, homologs)
@@ -256,10 +256,10 @@ get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_pep
   # get the oak protein orthologs
   
   # filter for those that we want
-  oak_orthos <- blastp_ortho %>%
+  oak_orthos <- my.blastp_ortho %>%
     filter(query_id %in% ids)
   
-  qrobAA_orthos <- qrobAA[oak_orthos$subject_id]
+  qrobAA_orthos <- my.qrobAA[oak_orthos$subject_id]
   
   #add "ortho" to name to make it clear
   names(qrobAA_orthos) <- str_c(names(qrobAA_orthos), "_ortho")
@@ -276,7 +276,7 @@ get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_pep
            bit.score >= 100) %>%
     pull(subject.acc.ver)
   
-  qrob_homologs <- qrobAA[Qrob_hits]
+  qrob_homologs <- my.qrobAA[Qrob_hits]
   
   homologs <- c(homologs, qrob_homologs)
   
@@ -284,11 +284,11 @@ get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_pep
   
   if(!dir.exists("_tmp")) dir.create("_tmp")
   
-  writeXStringSet(tanoak_dna_bind_aa[ids], "_tmp/tanoak_tmp_aa.fa")
+  writeXStringSet(my.tanoak_dna_bind_aa[ids], "_tmp/tanoak_tmp_aa.fa")
   
-  system("blastp -query _tmp/tanoak_tmp_aa.fa -db ../input/blastTanOak.proteins.fa -outfmt 7 > tmp/tmp_vs_Tanoak_blastp.tsv")
+  system("blastp -query _tmp/tanoak_tmp_aa.fa -db ../input/blast/TanOak.proteins.fa -outfmt 7 > _tmp/tmp_vs_Tanoak_blastp.tsv")
   
-  hits_tanoak <- read_tsv("../tmp/tmp_vs_Tanoak_blastp.tsv",
+  hits_tanoak <- read_tsv("_tmp/tmp_vs_Tanoak_blastp.tsv",
                           comment = "#",
                           col_names = header) %>%
     filter(evalue < 1e-5,
@@ -298,7 +298,7 @@ get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_pep
   
   # extract the TanOak sequences and add
   
-  tanoak_paralogs <- tanoak_aa[hits_tanoak$subject.acc.ver]
+  tanoak_paralogs <- my.tanoak_aa[hits_tanoak$subject.acc.ver]
   homologs <- c(homologs, tanoak_paralogs)
   
   # Prune short sequences
@@ -309,28 +309,56 @@ get_homololgs <- function(ids, filestem, hittable=hittable, blast_peps=blast_pep
   # write out the table
   names(homologs) <- str_remove(names(homologs), ".*\\|")
   homologs <- homologs[!duplicated(names(homologs))]
-  writeXStringSet(homologs, "tmp/tmp_tanoak_orthos.fa")
+  writeXStringSet(homologs, "_tmp/tmp_tanoak_orthos.fa")
   
   ## align!
-  
+  if(!(dir.exists("trees"))) dir.create("trees")
   system2("mafft",
-          args = c("--thread 8", "--localpair", "--maxiterate 1000", "--reorder", "tmp/tanoak_tanoak_orthos.fa"),
-          stdout=str_c("../output/", filestem, "_orthos_aligned.fa"))
+          args = c("--thread 4", "--localpair", "--maxiterate 1000", "--reorder", "_tmp/tmp_tanoak_orthos.fa"),
+          stdout=str_c("../output/trees/", filestem, "_orthos_aligned.fa"))
   
   # prune alignment
   
-  aligned <- readAAMultipleAlignment(str_c("../output/", filestem, "_orthos_aligned.fa"))
+  aligned <- readAAMultipleAlignment(str_c("../output/trees/", filestem, "_orthos_aligned.fa"))
   aligned <- maskGaps(aligned, min.fraction=0.50, min.block.width=10)
   maskedratio(aligned)
   
-  writeXStringSet(as(aligned, "AAStringSet"), str_c("../output/", filestem, "_orthos_aligned_pruned.fa"))
+  writeXStringSet(as(aligned, "AAStringSet"), str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"))
   
   # build tree
-  system2("FastTreeMP", args=str_c("../output/", filestem, "_orthos_aligned_pruned.fa"),
-          stdout = str_c("../output/", filestem, "_orthos.tre"))
+ # system2("FastTreeMP", args=str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"),
+          #stdout = str_c("../output/trees/", filestem, "_orthos.tre"))
+
+system2("FastTree", args=str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"),
+          stdout = str_c("../output/trees/", filestem, "_orthos.tre"))
+
+file.remove(dir("_tmp", pattern=".*", full.names = TRUE))
 }
 ```
 
+
+```{r}
+get_homologs_tree(ids = c("augustus-1014_pilon-processed-gene-5.8",
+                          "augustus-542_pilon-processed-gene-26.72"),
+                  filestem="1014_542_RAS1")
+
+get_homologs_tree(ids = c("maker-431_pilon-augustus-gene-9.19", "augustus-266_pilon-processed-gene-97.305"), filestem = "431_266_ATHB-7")
+
+get_homologs_tree(ids = "maker-74056_pilon-snap-gene-18.97",
+                  filestem = "74056_WRK41")
+
+get_homologs_tree(ids = "maker-261_pilon-snap-gene-47.3",
+                  filestem = "261_WRKY40")
+
+get_homologs_tree(ids = "maker-345_pilon-snap-gene-67.1",
+                  filestem = "345_WRKY11")
+
+get_homomologs_tree(ids = c("augustus-353_pilon-processed-gene-14.64", "augustus-267_pilon-processed-gene-29.9"),
+                    filestem = "353_HSF2_3")
+```
+
+
+STOPPED HERE
 
 ## Export Tanoak, oak, and chestnut sequences:
 
