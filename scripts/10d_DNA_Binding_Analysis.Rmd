@@ -202,33 +202,16 @@ get_homologs_tree <- function(ids, filestem, my.hittable=hittable, my.blast_peps
   writeXStringSet(as(aligned, "AAStringSet"), str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"))
   
   # build tree
- # system2("FastTreeMP", args=str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"),
-          #stdout = str_c("../output/trees/", filestem, "_orthos.tre"))
-
-system2("FastTree", args=str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"),
+  # system2("FastTreeMP", args=str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"),
+  #stdout = str_c("../output/trees/", filestem, "_orthos.tre"))
+  
+  system2("FastTree", args=str_c("../output/trees/", filestem, "_orthos_aligned_pruned.fa"),
           stdout = str_c("../output/trees/", filestem, "_orthos.tre"))
-
-# get close orthologs from oak and chestnut
-
-ruba_dentata_ortho_names <- hits %>% filter(Species %in% c("C.dentata v1.1", "Q.rubra v2.1") ) %>%
-  group_by(Species) %>%
-  slice_max(Bitscore) %>% 
-  pull(Protein)
-
-orthos_small <- c(targets, qrobAA_orthos, homologs[ruba_dentata_ortho_names])
-
-writeXStringSet(orthos_small, "_tmp/tmp_tanoak_small_orthos.fa")
-
-system2("mafft",
-        args = c("--thread 4", "--localpair", "--maxiterate 1000", "--reorder", "_tmp/tmp_tanoak_small_orthos.fa"),
-        stdout=str_c("../output/trees/", filestem, "_small_orthos_aligned.fa"))
-
-file.remove(dir("_tmp", pattern=".*", full.names = TRUE))
 }
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 get_homologs_tree(ids = c("augustus-1014_pilon-processed-gene-5.8",
                           "augustus-542_pilon-processed-gene-26.72"),
                   filestem="1014_542_RAS1")
@@ -245,30 +228,176 @@ get_homologs_tree(ids = "maker-345_pilon-snap-gene-67.1",
                   filestem = "345_WRKY11")
 
 get_homologs_tree(ids = c("augustus-353_pilon-processed-gene-14.64", "augustus-267_pilon-processed-gene-29.9"),
-                    filestem = "353_HSF2_3")
+                  filestem = "353_HSF2_3")
 ```
 
 See trees on iTol
 
-STOPPED HERE
-
-## Export Tanoak, oak, and chestnut sequences:
+## Look at alignments of orthologs
 
 ```{r}
-#585
-homologs_804_585[c("augustus_masked-585_pilon-processed-gene-3.11-mRNA-1", "Qrob_P0680550.2", "Caden.12G048400", )] %>%
-  writeXStringSet("../output_585_orthos_small.fa")
+# get close orthologs from oak and chestnut
 
-#804
-homologs_804_585[c("augustus_masked-804_pilon-processed-gene-0.1-mRNA-1","Qrob_P0468790.2", "Caden.12G048800")] %>%
-  writeXStringSet("../output_804_orthos_small.fa")
+get_orthos <- function(ids, filestem, my.hittable=hittable, my.blast_peps=blast_peps, my.blastp_ortho=blastp_ortho, my.Qrob_hittable=Qrob_hittable, my.qrobAA=qrobAA, my.tanoak_aa=tanoak_aa, my.tanoak_dna_bind_aa=tanoak_dna_bind_aa) {
+  
+  
+  # get the blast hits
+  hits <- my.hittable %>%
+    filter(Query.ID %in% ids) %>%
+    filter(!duplicated(gene.name))
+  
+  homologs <- my.blast_peps[hits$Protein]
+  
+  #add tanoak
+  
+  targets <- my.tanoak_dna_bind_aa[ids]
+  
+  names(targets) <- names(targets) %>% str_c("target_", .)
+  homologs <- c(targets, homologs)
+  
+  # get the oak protein orthologs
+  
+  # filter for those that we want
+  oak_orthos <- my.blastp_ortho %>%
+    filter(query_id %in% ids)
+  
+  qrobAA_orthos <- my.qrobAA[oak_orthos$subject_id]
+  
+  #add "ortho" to name to make it clear
+  names(qrobAA_orthos) <- str_c(names(qrobAA_orthos), "_ortho")
+  
+  #add oak
+  homologs <- c(qrobAA_orthos, homologs)
+  
+  
+  # now add other Qrob homologs:
+  
+  Qrob_hits <- Qrob_hittable %>%
+    filter(query.acc.ver %in% ids,
+           !duplicated(subject.acc.ver),
+           bit.score >= 100) %>%
+    pull(subject.acc.ver)
+  
+  qrob_homologs <- my.qrobAA[Qrob_hits]
+  
+  homologs <- c(homologs, qrob_homologs)
+  
+  # Other Tanoak homologs
+  
+  if(!dir.exists("_tmp")) dir.create("_tmp")
+  
+  writeXStringSet(my.tanoak_dna_bind_aa[ids], "_tmp/tanoak_tmp_aa.fa")
+  
+  system("blastp -query _tmp/tanoak_tmp_aa.fa -db ../input/blast/TanOak.proteins.fa -outfmt 7 > _tmp/tmp_vs_Tanoak_blastp.tsv")
+  
+  hits_tanoak <- read_tsv("_tmp/tmp_vs_Tanoak_blastp.tsv",
+                          comment = "#",
+                          col_names = header) %>%
+    filter(evalue < 1e-5,
+           !subject.acc.ver %in% unique(query.acc.ver),
+           !duplicated(subject.acc.ver)) %>%
+    mutate(subject.acc.ver = str_remove(subject.acc.ver, "-mRNA-.*"))
+  
+  # extract the TanOak sequences and add
+  
+  tanoak_paralogs <- my.tanoak_aa[hits_tanoak$subject.acc.ver]
+  homologs <- c(homologs, tanoak_paralogs)
+  
+  # Prune short sequences
+  med_length <- median(nchar(homologs))
+  homologs <- homologs[nchar(homologs) > 0.5*med_length & nchar(homologs) < 2*med_length]
+  
+  
+  ruba_dentata_ortho_names <- hits %>% filter(Species %in% c("C.dentata v1.1", "Q.rubra v2.1") ) %>%
+    group_by(Species) %>%
+    slice_max(Bitscore) %>% 
+    pull(Protein)
+  
+  orthos_small <- c(targets, qrobAA_orthos, homologs[ruba_dentata_ortho_names])
+  
+  writeXStringSet(orthos_small, "_tmp/tmp_tanoak_small_orthos.fa")
+  
+  system2("mafft",
+          args = c("--thread 4", "--localpair", "--maxiterate 1000", "--reorder", "_tmp/tmp_tanoak_small_orthos.fa"),
+          stdout=str_c("../output/trees/", filestem, "_small_orthos_aligned.fa"))
+  
+  file.remove(dir("_tmp", pattern=".*", full.names = TRUE))
+}
 ```
 
-```{bash}
-time mafft --thread 3 --localpair --maxiterate 1000 ../output_585_orthos_small.fa > ../output_585_orthos_small_aligned.fa
+```{r}
+gene_table <- tibble(
+  id=c("augustus-1014_pilon-processed-gene-5.8",
+       "augustus-542_pilon-processed-gene-26.72",
+       "maker-431_pilon-augustus-gene-9.19",
+       "augustus-266_pilon-processed-gene-97.305",
+       "maker-74056_pilon-snap-gene-18.97",
+       "maker-261_pilon-snap-gene-47.3",
+       "maker-345_pilon-snap-gene-67.1",
+       "augustus-353_pilon-processed-gene-14.64",
+       "augustus-267_pilon-processed-gene-29.9"),
+  stem=c("1014_RAS1",
+         "542_RAS1",
+         "431_ATHB-7",
+         "266_ATHB-7",
+         "74056_WRK41",
+         "261_WRKY40",
+         "345_WRKY11",
+         "353_HSFA2",
+         "267_HSFA3"
+  )
+)
+
+walk2(gene_table$id, gene_table$stem, get_orthos)
 ```
 
-```{bash}
-time mafft --thread 3 --localpair --maxiterate 1000 ../output_804_orthos_small.fa > ../output_804_orthos_small_aligned.fa
+## small alignment notes
+
+1014 and 542_RAS1: Qurub orthologs aren't right (Removed)
+
+1014: Not clear that we have the right Caden ortholog
+
+353_HSFA2: Qrob orthlog looks to have annotation error; sequence diverges at 3' end. (Editted to truncate)
+
+
+## Calculate divergence from Caden
+
+
+```{r}
+
+tryMask  <-  function(aln) { # needed because if there are no gaps then we get an error
+  tryCatch(error = function(cnd) aln,
+           maskGaps(aln, min.fraction=.1, min.block.width=1))
+}
+
+calcChanges <- function(mat) {
+  rownames(mat) <- rownames(mat) %>%
+    str_remove("[\\._].*") %>%
+    str_replace("target", "Tanoak")
+  
+  caden <- mat["Caden",]
+  
+  mat <- mat[!str_detect(rownames(mat), "Caden"),]
+  
+  result <- apply(mat, 1, function(x) sum(x!=caden)) %>% as_tibble_row()
+  
+}
+
+
+
+
+files <- dir("../output/trees", pattern = "small_orthos_aligned", full.names = TRUE) %>% 
+  str_subset(pattern="1014", negate = TRUE)
+
+changes_rel_caden <- tibble(file=files) %>%
+  mutate(alignment = map(file, readAAMultipleAlignment),
+         alignment = map(alignment, tryMask),
+         mat = map(alignment, as.matrix),
+         changes = map(mat, calcChanges),
+         file=basename(file)
+         )
+
+changes_rel_caden %>% select(file, changes) %>% unnest(changes)
 ```
+
 
