@@ -1,0 +1,97 @@
+# in all resistant samples
+ID=augustus-582_pilon-processed-gene-4.6;Name=augustus-582_pilon-processed-gene-4.6
+ID=augustus-72890_pilon-processed-gene-0.5;Name=augustus-72890_pilon-processed-gene-0.5
+ID=augustus-74838_pilon-processed-gene-4.24;Name=augustus-74838_pilon-processed-gene-4.24
+ID=augustus_masked-72163_pilon-processed-gene-0.105;Name=augustus_masked-72163_pilon-processed-gene-0.105
+ID=evm-453_pilon-processed-gene-0.26;Name=evm-453_pilon-processed-gene-0.26
+ID=evm-718_pilon-processed-gene-1.91;Name=evm-718_pilon-processed-gene-1.91
+ID=maker-262_pilon-augustus-gene-25.24;Name=maker-262_pilon-augustus-gene-25.24
+ID=maker-266_pilon-snap-gene-26.62;Name=maker-266_pilon-snap-gene-26.62
+ID=maker-347_pilon-augustus-gene-2.0;Name=maker-347_pilon-augustus-gene-2.0
+ID=maker-356_pilon-snap-gene-7.54;Name=maker-356_pilon-snap-gene-7.54
+ID=maker-72357_pilon-snap-gene-1.15;Name=maker-72357_pilon-snap-gene-1.15
+ID=maker-827_pilon-exonerate_protein2genome-gene-4.10;Name=maker-827_pilon-exonerate_protein2genome-gene-4.10
+ID=snap-369_pilon-processed-gene-2.53;Name=snap-369_pilon-processed-gene-2.53
+ID=snap-376_pilon-processed-gene-6.19;Name=snap-376_pilon-processed-gene-6.19
+ID=snap-429_pilon-processed-gene-0.19;Name=snap-429_pilon-processed-gene-0.19
+ID=snap-522_pilon-processed-gene-4.62;Name=snap-522_pilon-processed-gene-4.62
+ID=snap-72890_pilon-processed-gene-0.38;Name=snap-72890_pilon-processed-gene-0.38
+ID=snap-973_pilon-processed-gene-2.150;Name=snap-973_pilon-processed-gene-2.150
+ID=snap-973_pilon-processed-gene-8.86;Name=snap-973_pilon-processed-gene-8.86
+ID=snap_masked-313_pilon-processed-gene-1.120;Name=snap_masked-313_pilon-processed-gene-1.120
+ 
+# in all susceptible samples
+ID=augustus-384_pilon-processed-gene-19.141;Name=augustus-384_pilon-processed-gene-19.141
+ID=augustus-72890_pilon-processed-gene-0.5;Name=augustus-72890_pilon-processed-gene-0.5
+ID=augustus_masked-72163_pilon-processed-gene-0.105;Name=augustus_masked-72163_pilon-processed-gene-0.105
+ID=evm-453_pilon-processed-gene-0.26;Name=evm-453_pilon-processed-gene-0.26
+ID=evm-710_pilon-processed-gene-1.86;Name=evm-710_pilon-processed-gene-1.86
+ID=maker-262_pilon-augustus-gene-25.24;Name=maker-262_pilon-augustus-gene-25.24
+ID=maker-266_pilon-snap-gene-26.62;Name=maker-266_pilon-snap-gene-26.62
+ID=maker-347_pilon-augustus-gene-2.0;Name=maker-347_pilon-augustus-gene-2.0
+ID=maker-356_pilon-snap-gene-7.54;Name=maker-356_pilon-snap-gene-7.54
+ID=maker-381_pilon-augustus-gene-9.0;Name=maker-381_pilon-augustus-gene-9.0
+ID=maker-423_pilon-augustus-gene-5.13;Name=maker-423_pilon-augustus-gene-5.13
+ID=maker-429_pilon-augustus-gene-13.71;Name=maker-429_pilon-augustus-gene-13.71
+ID=maker-453_pilon-augustus-gene-9.77;Name=maker-453_pilon-augustus-gene-9.77
+ID=maker-639_pilon-snap-gene-0.48;Name=maker-639_pilon-snap-gene-0.48
+ID=maker-74838_pilon-snap-gene-4.15;Name=maker-74838_pilon-snap-gene-4.15
+ID=snap-261_pilon-processed-gene-21.76;Name=snap-261_pilon-processed-gene-21.76
+ID=snap-358_pilon-processed-gene-20.63;Name=snap-358_pilon-processed-gene-20.63
+ID=snap-369_pilon-processed-gene-2.53;Name=snap-369_pilon-processed-gene-2.53
+ID=snap-376_pilon-processed-gene-6.19;Name=snap-376_pilon-processed-gene-6.19
+ID=snap-376_pilon-processed-gene-6.20;Name=snap-376_pilon-processed-gene-6.20
+ID=snap-437_pilon-processed-gene-12.12;Name=snap-437_pilon-processed-gene-12.12
+ID=snap-437_pilon-processed-gene-2.95;Name=snap-437_pilon-processed-gene-2.95
+ID=snap-445_pilon-processed-gene-1.27;Name=snap-445_pilon-processed-gene-1.27
+ID=snap-665_pilon-processed-gene-2.64;Name=snap-665_pilon-processed-gene-2.64
+ID=snap-665_pilon-processed-gene-2.66;Name=snap-665_pilon-processed-gene-2.66
+ID=snap-71527_pilon-processed-gene-0.26;Name=snap-71527_pilon-processed-gene-0.26
+ID=snap-72890_pilon-processed-gene-0.38;Name=snap-72890_pilon-processed-gene-0.38
+ID=snap-748_pilon-processed-gene-13.79;Name=snap-748_pilon-processed-gene-13.79
+ID=snap-973_pilon-processed-gene-8.86;Name=snap-973_pilon-processed-gene-8.86
+ID=snap_masked-313_pilon-processed-gene-1.120;Name=snap_masked-313_pilon-processed-gene-1.120
+ID=snap_masked-416_pilon-processed-gene-17.54;Name=snap_masked-416_pilon-processed-gene-17.54
+ID=snap_masked-438_pilon-processed-gene-0.0;Name=snap_masked-438_pilon-processed-gene-0.0
+ID=snap_masked-572_pilon-processed-gene-1.91;Name=snap_masked-572_pilon-processed-gene-1.91
+ID=snap_masked-679_pilon-processed-gene-6.37;Name=snap_masked-679_pilon-processed-gene-6.37
+ID=snap_masked-798_pilon-processed-gene-1.8;Name=snap_masked-798_pilon-processed-gene-1.8
+
+# summary of SNPEff types in each sample
+snpeff HIGH type in 52.42
+{'splice_acceptor_variant&intron_variant', 'frameshift_variant&stop_gained', 'splice_donor_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'stop_gained&splice_region_variant', 'stop_lost', 'stop_gained&conservative_inframe_insertion', 'stop_gained&disruptive_inframe_insertion', 'stop_gained', 'stop_lost&splice_region_variant', 'stop_gained&disruptive_inframe_deletion', 'frameshift_variant', 'start_lost'}
+snpeff HIGH type in 52.42.XL
+{'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'splice_donor_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'frameshift_variant', 'stop_lost&splice_region_variant', 'stop_gained', 'stop_gained&splice_region_variant', 'stop_gained&disruptive_inframe_deletion', 'stop_gained&conservative_inframe_insertion', 'stop_lost', 'frameshift_variant&stop_gained', 'start_lost', 'stop_gained&disruptive_inframe_insertion'}
+snpeff HIGH type in 52.81
+{'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant&stop_lost&splice_region_variant', 'stop_lost&splice_region_variant', 'stop_gained&splice_region_variant', 'stop_lost', 'splice_acceptor_variant&splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant&splice_region_variant', 'stop_gained', 'frameshift_variant&start_lost', 'start_lost', 'splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'frameshift_variant&stop_gained', 'splice_donor_variant&intron_variant', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant'}
+snpeff HIGH type in 52.97
+{'stop_gained&splice_region_variant', 'frameshift_variant&stop_lost&splice_region_variant', 'stop_gained', 'stop_lost&splice_region_variant', 'frameshift_variant&stop_gained', 'frameshift_variant&splice_region_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant', 'start_lost', 'stop_gained&disruptive_inframe_deletion', 'frameshift_variant&splice_acceptor_variant&splice_region_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'splice_donor_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'stop_lost', 'splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant'}
+snpeff HIGH type in LP.22.20
+{'start_lost&splice_region_variant', 'start_lost', 'bidirectional_gene_fusion', 'frameshift_variant&splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained&splice_region_variant', 'splice_acceptor_variant&splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant', 'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant&stop_gained', 'frameshift_variant&stop_lost&splice_region_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_lost', 'splice_acceptor_variant&intron_variant', 'splice_donor_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'stop_gained', 'frameshift_variant&splice_region_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'stop_lost&splice_region_variant'}
+snpeff HIGH type in LP.22.48
+{'splice_acceptor_variant&intron_variant', 'stop_gained&splice_region_variant', 'frameshift_variant&stop_lost', 'frameshift_variant', 'frameshift_variant&stop_gained', 'frameshift_variant&stop_lost&splice_region_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained', 'stop_lost&splice_region_variant', 'stop_gained&disruptive_inframe_deletion', 'stop_lost', 'start_lost', 'stop_gained&conservative_inframe_insertion', 'splice_donor_variant&intron_variant', 'start_lost&splice_region_variant', 'frameshift_variant&splice_region_variant', 'stop_gained&disruptive_inframe_insertion', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant'}
+snpeff HIGH type in LP.22.48.XL
+{'stop_gained&conservative_inframe_insertion', 'stop_gained&disruptive_inframe_deletion', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'start_lost&splice_region_variant', 'frameshift_variant&stop_lost', 'stop_lost', 'splice_donor_variant&intron_variant', 'stop_gained&disruptive_inframe_insertion', 'start_lost&conservative_inframe_deletion', 'frameshift_variant&stop_gained', 'start_lost', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant&stop_lost&splice_region_variant', 'frameshift_variant&start_lost', 'stop_gained', 'splice_acceptor_variant&intron_variant', 'stop_gained&splice_region_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'stop_lost&splice_region_variant', 'frameshift_variant&splice_region_variant', 'frameshift_variant'}
+snpeff HIGH type in LP.22.50
+{'bidirectional_gene_fusion', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant', 'stop_lost', 'frameshift_variant&stop_gained', 'frameshift_variant&stop_lost&splice_region_variant', 'stop_gained&conservative_inframe_insertion', 'stop_lost&splice_region_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'frameshift_variant&splice_acceptor_variant&splice_region_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'stop_gained', 'start_lost', 'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'frameshift_variant&start_lost', 'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'splice_donor_variant&intron_variant', 'stop_gained&disruptive_inframe_insertion', 'stop_gained&splice_region_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'start_lost&splice_region_variant', 'splice_donor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant&stop_lost'}
+snpeff HIGH type in LP.22.54
+{'frameshift_variant&stop_lost&splice_region_variant', 'stop_lost', 'stop_gained', 'stop_gained&conservative_inframe_insertion', 'start_lost', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'stop_lost&splice_region_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'splice_donor_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'stop_gained&splice_region_variant', 'frameshift_variant&start_lost', 'splice_acceptor_variant&intron_variant', 'frameshift_variant&stop_gained', 'frameshift_variant', 'splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant'}
+snpeff HIGH type in LP.22.54.XL
+{'splice_acceptor_variant&splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant', 'stop_lost&splice_region_variant', 'stop_gained', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'splice_donor_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant&stop_lost&splice_region_variant', 'frameshift_variant&start_lost', 'frameshift_variant&splice_region_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_lost', 'frameshift_variant&stop_gained', 'start_lost', 'stop_gained&splice_region_variant'}
+snpeff HIGH type in NL.2
+{'splice_donor_variant&intron_variant', 'stop_gained&disruptive_inframe_insertion', 'splice_donor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant', 'frameshift_variant&stop_gained', 'frameshift_variant&splice_region_variant', 'splice_donor_variant&splice_region_variant&5_prime_UTR_variant&intron_variant', 'stop_lost', 'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'stop_gained&splice_region_variant', 'stop_lost&splice_region_variant', 'frameshift_variant&start_lost', 'stop_gained', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'stop_gained&conservative_inframe_insertion&splice_region_variant', 'splice_acceptor_variant&intron_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained&disruptive_inframe_deletion', 'start_lost'}
+snpeff HIGH type in NL.2.XL
+{'stop_gained', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant&start_lost', 'splice_donor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'stop_lost', 'frameshift_variant', 'start_lost', 'stop_lost&splice_region_variant', 'stop_gained&splice_region_variant', 'frameshift_variant&splice_region_variant', 'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'splice_donor_variant&intron_variant', 'frameshift_variant&stop_gained', 'stop_gained&disruptive_inframe_deletion'}
+snpeff HIGH type in SM.52.91
+{'stop_gained&disruptive_inframe_insertion', 'splice_donor_variant&intron_variant', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant', 'start_lost', 'stop_lost', 'splice_acceptor_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'stop_lost&splice_region_variant', 'stop_gained&splice_region_variant', 'frameshift_variant&start_lost', 'frameshift_variant&stop_gained', 'stop_gained&conservative_inframe_insertion', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained', 'splice_donor_variant&splice_region_variant&intron_variant'}
+snpeff HIGH type in SM.54.26
+{'stop_gained', 'stop_lost&splice_region_variant', 'stop_lost', 'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'start_lost', 'stop_gained&splice_region_variant', 'stop_gained&conservative_inframe_insertion', 'splice_donor_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant', 'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant&stop_gained'}
+snpeff HIGH type in SM.54.28
+{'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant&splice_region_variant', 'stop_gained', 'stop_lost&splice_region_variant', 'splice_acceptor_variant&splice_donor_variant&splice_region_variant&3_prime_UTR_variant&intron_variant', 'stop_gained&conservative_inframe_insertion', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'frameshift_variant', 'frameshift_variant&splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained&splice_region_variant', 'frameshift_variant&stop_gained', 'stop_gained&disruptive_inframe_insertion', 'splice_donor_variant&intron_variant', 'stop_lost', 'frameshift_variant&start_lost', 'frameshift_variant&stop_lost&splice_region_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'start_lost'}
+snpeff HIGH type in SM.54.45
+{'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'stop_gained&conservative_inframe_insertion', 'stop_lost&splice_region_variant', 'splice_acceptor_variant&intron_variant', 'frameshift_variant', 'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'start_lost', 'stop_lost', 'splice_donor_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant&stop_gained', 'stop_gained', 'stop_gained&splice_region_variant'}
+snpeff HIGH type in SM.54.45.XL
+{'splice_acceptor_variant&intron_variant', 'stop_lost&splice_region_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'splice_acceptor_variant&disruptive_inframe_deletion&splice_region_variant&intron_variant', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_lost', 'start_lost', 'stop_gained', 'splice_donor_variant&intron_variant', 'frameshift_variant', 'stop_gained&splice_region_variant', 'stop_gained&disruptive_inframe_deletion', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant&stop_gained'}
+snpeff HIGH type in 54.37
+{'stop_gained&splice_region_variant', 'splice_acceptor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'splice_acceptor_variant&intron_variant', 'stop_lost&splice_region_variant', 'stop_gained&disruptive_inframe_deletion', 'splice_acceptor_variant&splice_region_variant&intron_variant', 'stop_gained', 'stop_gained&conservative_inframe_insertion', 'frameshift_variant&splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant', 'splice_donor_variant&intron_variant', 'frameshift_variant&stop_lost&splice_region_variant', 'start_lost&splice_region_variant', 'start_lost', 'frameshift_variant&stop_gained', 'stop_lost', 'splice_donor_variant&conservative_inframe_deletion&splice_region_variant&intron_variant', 'splice_donor_variant&splice_region_variant&intron_variant', 'frameshift_variant&splice_region_variant'}
+snpeff HIGH type in 54.37.XL

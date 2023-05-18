@@ -1,0 +1,15 @@
+# Analyze frequencies of transhets.  
+
+Are there more than expected in susceptible vs resistant?  I think I can do this as a binomial
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+d <- read_csv("../input/SNPeff_TransHet/SNPEffgenes_in_samples-1.csv")
+d
+```
+
+
