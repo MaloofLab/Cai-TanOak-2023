@@ -8,8 +8,30 @@ library(tidyverse)
 ```
 
 ```{r}
-d <- read_csv("../input/SNPeff_TransHet/SNPEffgenes_in_samples-1.csv")
+d <- read_csv("../input/SNPeff_TransHet/SNPEffgenes_in_samples.csv") %>%
+  select(-c(`54.37`, SM.54.45, `52.42`, `LP.22.48`, `LP.22.54` , `LP.22.54`, `NL.2`, total_count)) %>%
+  rename(geneID=`...1`) %>%
+  rename_with(~ str_replace_all(.x, fixed("."), "-")) %>%
+  rename_with(~ str_replace(.x, "^5", "SM-5")) %>%
+  rename_with(~ str_remove(.x, "-XL"))
+d[is.na(d)] <- 0
+d <- d %>% pivot_longer(cols=-geneID, names_to = "line", values_to = "transhet")
 d
 ```
 
+```{r}
+res <- read_csv("../input/TanOakResistance.csv")
+res
+```
+```{r}
+d <- d %>% inner_join(res, by=c("line"="Tanoak"))
+d
+```
+
+```{r}
+fisher <- function(x) {
+  m <- table
+}
+d.nest <- d %>% group_by(geneID) %>% nest() 
+```
 
