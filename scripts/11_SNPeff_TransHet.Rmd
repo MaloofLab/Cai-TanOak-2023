@@ -5,6 +5,8 @@ Are there more than expected in susceptible vs resistant?  I think I can do this
 
 ```{r}
 library(tidyverse)
+library(org.At.tair.db)
+
 ```
 
 ```{r}
@@ -13,7 +15,8 @@ d <- read_csv("../input/SNPeff_TransHet/SNPEffgenes_in_samples.csv") %>%
   rename(geneID=`...1`) %>%
   rename_with(~ str_replace_all(.x, fixed("."), "-")) %>%
   rename_with(~ str_replace(.x, "^5", "SM-5")) %>%
-  rename_with(~ str_remove(.x, "-XL"))
+  rename_with(~ str_remove(.x, "-XL")) %>%
+  mutate(geneID=str_remove(geneID,"ID.*Name="))
 d[is.na(d)] <- 0
 d <- d %>% pivot_longer(cols=-geneID, names_to = "line", values_to = "transhet")
 d
@@ -30,8 +33,65 @@ d
 
 ```{r}
 fisher <- function(x) {
-  m <- table
+  table(x$transhet, x$Tolerance_Resistance) %>% fisher.test()
 }
-d.nest <- d %>% group_by(geneID) %>% nest() 
+d.nest <- d %>% 
+  group_by(geneID) %>% 
+  filter(length(unique(transhet)) > 1) %>%
+  nest() 
+
+d.nest <- d.nest %>% ungroup() %>%
+  mutate(fisher=map(data, fisher),
+         fisher.p=map_dbl(fisher, magrittr::extract("p.value")),
+         fisher.fdr=p.adjust(fisher.p, method="fdr")) %>%
+  arrange(fisher.p)
+d.nest
 ```
+
+## Add annotation
+
+```{r}
+Atblast <- read_csv("../output/TanOakVsA.t.blast_out.csv", col_names = str_split("genes AGI pident length mismatch gapopen qstart qend sstart send evalue bitscore", " ")[[1]]) %>%
+  mutate(genes=str_remove(genes, "-mRNA.*"))
+head(Atblast)
+```
+
+```{r}
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+#interpro <- read_tsv("../output/output.iprscan", col_names = FALSE)
+head(interpro)
+```
+
+```{r}
+d.interpro <- interpro %>% 
+  dplyr::select(geneID=X1, description=X6 ) %>% 
+  mutate(geneID=str_remove(geneID, "-mRNA-.*")) %>%
+  unique() %>% 
+  na.omit() %>% 
+  right_join(d.nest, by="geneID") %>%
+  group_by(geneID) %>%
+  summarize(interpro.description = str_c(description, collapse="; "), fisher.p=unique(fisher.p)) %>%
+  arrange(fisher.p)
+  
+d.interpro
+```
+
+Arabidopsis best hit and gene symbols (if any)
+
+```{r}
+d.at <- Atblast %>%
+  mutate(geneID=str_remove(genes, "-mRNA-.*")) %>%
+    dplyr::select(geneID, AGI, pident, length, evalue, bitscore) %>%
+  right_join(d.nest) %>%
+  group_by(geneID) %>%
+  filter(!is.na(AGI)) %>%
+  slice_max(order_by=bitscore, n=1) %>%
+  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
+         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))[[1]]) %>%
+  dplyr::select(geneID, AT.symbol, AGI, everything()) %>%
+  arrange(fisher.p)
+
+d.at
+```
+
 
