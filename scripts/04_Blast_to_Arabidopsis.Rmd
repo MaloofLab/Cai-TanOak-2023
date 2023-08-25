@@ -7,6 +7,7 @@ Quickie annotation by blasting TanOak to Arabidopsis
 
 ```{r}
 library(tidyverse)
+library(org.At.tair.db)
 ```
 
 
@@ -34,6 +35,47 @@ blastp -query ../input/blast/TanOak.proteins.fa \
   -culling_limit 2 \
   -max_target_seqs 5 \
   -out TanOakVsA.t.blast_out.csv
+```
+
+
+## Add annotation
+
+annotation data
+```{r}
+Atblast <- read_csv("../output/TanOakVsA.t.blast_out.csv", col_names = str_split("genes AGI pident length mismatch gapopen qstart qend sstart send evalue bitscore", " ")[[1]])
+head(Atblast)
+```
+
+
+```{r}
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+#interpro <- read_tsv("../output/output.iprscan", col_names = FALSE)
+head(interpro)
+```
+```{r}
+interpro_clean <- interpro %>% 
+  dplyr::select(genes=X1, description=X6 ) %>% 
+  unique() %>% 
+  na.omit() %>% 
+  group_by(genes) %>%
+  summarize(interpro.description = str_c(description, collapse="; "))
+  
+interpro_clean
+```
+
+```{r}
+annotation <- Atblast %>%
+  dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
+  group_by(genes) %>%
+  slice_max(order_by=bitscore, n=1) %>%
+  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
+         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))[[1]]) %>%
+    right_join(interpro_clean) %>%
+  dplyr::select(genes, AT.symbol, AGI, interpro.description, everything()) 
+
+annotation
+
+write_csv(annotation, "../output/annotated_genes.csv.gz")
 ```
 
 
