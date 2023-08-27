@@ -4,8 +4,8 @@ Are there more than expected in susceptible vs resistant?  I think I can do this
 
 
 ```{r}
-library(tidyverse)
 library(org.At.tair.db)
+library(tidyverse)
 
 ```
 
@@ -94,4 +94,11 @@ d.at <- Atblast %>%
 d.at
 ```
 
+```{r}
+d.at$data[[1]]
+```
 
+
+```{r}
+d.at$data[[2]]
+```
