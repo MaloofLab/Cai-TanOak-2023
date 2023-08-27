@@ -25,7 +25,18 @@ dn_ds data
 ```{r}
 dn_ds <- read_csv("../output/gene_sets_dnds_long.csv")
 head(dn_ds)
+summary(dn_ds)
 ```
+
+how many genes with dN/dS >= 1.2? How many less than 0.1?
+
+```{r}
+dn_ds %>%
+  filter(!duplicated(genes)) %>%
+  summarize(`dN/dS < 0.1`=sum(dnds<0.1), 
+            `dN/dS >= 1.2` = sum (dnds >= 1.2))
+```
+
 
 annotation data
 ```{r}
@@ -80,6 +91,12 @@ dna.at <- Atblast %>%
 
 dna.at
 ```
+
+```{r}
+write_csv(dna.at, "../output/DNA_dNdS_genes.csv")
+write_csv(dna.at, "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/DNA_dNdS_genes.csv")
+```
+
 
 ### Notes:
 

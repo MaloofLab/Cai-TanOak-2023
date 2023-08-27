@@ -188,11 +188,12 @@ getwd()
 
 
 ```{r}
-# bin 1: dn/ds >= 1.2
-# bin 2: dn/ds >= 0.8 & dn/ds < 1.2
-# bin 3: dn/ds >= 0.3 & dn/ds < 0.8
-# bin 4: dn/ds >= 0.1 & dn/ds < 0.3
-# bin 5: dn/ds < 0.1
+# bin 1: dn/ds >= 1.4
+# bin 2: dn/ds >= 1.2 $ < 1.4
+# bin 3: dn/ds >= 0.8 & dn/ds < 1.2
+# bin 4: dn/ds >= 0.3 & dn/ds < 0.8
+# bin 5: dn/ds >= 0.1 & dn/ds < 0.3
+# bin 6: dn/ds < 0.1
 
 colnames(FDR_filtered) <- c("GO_term", "GO_desc", "< 0.1", "0.1 - 0.29", "0.3 - 0.79", "0.8 - 1.19", "1.2 - 1.39", ">= 1.4", "GO_term_desc")
 
