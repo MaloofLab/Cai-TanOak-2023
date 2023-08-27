@@ -5,7 +5,7 @@ output: html_notebook
 
 ```{r}
 library(tidyverse)
-datadir <- "/Volumes/GoogleDrive/Shared drives/TanOak"
+datadir <- "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/"
 ```
 
 ```{r}
@@ -43,6 +43,7 @@ join them
 VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
 ```
 
+Group by SNP and nest so that we can do a Fisher test on each SNP
 ```{r}
 system.time(
   VRtibble <- VRtibble %>% dplyr::select(snpID, sample, GT, Tolerance_Resistance, effect, impact, GeneName, CDSpos_len) %>%
@@ -147,13 +148,58 @@ gene_summary_ann <- blast.best %>% select(query, subject, percentID, length, sta
   mutate(query=str_remove(query, "-mRNA-.*")) %>%
   right_join(gene_summary, by= c("query" = "GeneName")) %>%
   select(min.p, avg.p, snps, query, everything())
+```
 
-gene_summary_ann    %>% arrange(round(min.p,3), avg.p, desc(snps))      
+
+## ADD INTERPRO SCAN ANNOTATION
+
+```{r}
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+interpro
+```
+
+```{r}
+gene_summary_ann <- interpro %>% 
+  dplyr::select(geneID=X1, description=X6 ) %>% 
+  mutate(description=str_replace_na(description, "")) %>%
+  group_by(geneID) %>%
+  summarize(interpro.description = str_c(description, collapse="; ")) %>%
+  ungroup() %>%
+  mutate(geneID=str_remove(geneID, "-mRNA-.*"),
+         interpro.description=str_replace_all(interpro.description, "(; ){2,}", "; "),
+         interpro.description=str_remove(interpro.description, "(^; )|(; $)")) %>%
+  unique() %>% 
+  na.omit() %>% 
+  right_join(gene_summary_ann, by=c("geneID"="query")) %>%
+  select(geneID, min.p, avg.p, snps, interpro.description, everything())
+  
+gene_summary_ann
+```
+
+
+```{r}
+gene_summary_ann <- gene_summary_ann  %>% ungroup() %>%  arrange(avg.p, desc(snps))
+gene_summary_ann   
 ```
 
 ```{r}
 write_csv(gene_summary_ann, file="../output/Annotated_SNPeff_Summary.csv")
 write_csv(gene_summary_ann, file=file.path(datadir, "Annotated_SNPeff_Summary.csv"))
 
+```
+
+```{r}
+gene_summary_ann %>%
+  ungroup() %>%
+  mutate(avg.fdr = p.adjust(avg.p, method="fdr")) %>%
+  select(min.p, avg.p, avg.fdr) %>%
+  arrange(avg.fdr)
+```
+
+```{r}
+gene_summary_ann %>%
+  ungroup() %>%
+  summarize(genes_min_p_lt_0.05=sum(min.p<0.05, na.rm = TRUE),
+          genes_avg_p_lt_0.05=sum(avg.p<0.05, na.rm=TRUE))
 ```
 

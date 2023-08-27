@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+DO NOT USE.  INSTEAD OF LOOKING AT ALL SNPS, ONLY LOOK AT SNPS PREDICTED TO CAUSE A CODING CHANGE.  SEE SCRIPTS 05 AND 06.
+
 Taking an initial look at the SNPs
 
 Plan:
