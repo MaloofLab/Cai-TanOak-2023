@@ -53,6 +53,25 @@ system.time(
 head(VRtibble)
 ```
 
+Summarize this data 
+
+```{r}
+VRtibble %>%
+  group_by(impact) %>%
+  filter(impact!="LOW") %>%
+  summarize(moderate=sum(impact=="MODERATE"),
+            high=sum(impact=="HIGH"),
+            total_gene=length(unique(GeneName)))
+```
+
+total moderate or high = 
+```{r}
+VRtibble %>%
+  filter(impact!="LOW") %>%
+  nrow()
+```
+
+
 ```{r}
 fisherp <- function(data){ #get p value from fisher test
   if(length(unique(data$GT))==1) 
