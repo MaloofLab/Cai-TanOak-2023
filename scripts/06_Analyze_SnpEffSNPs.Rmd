@@ -5,6 +5,7 @@ output: html_notebook
 
 ```{r}
 library(tidyverse)
+library(UpSetR)
 datadir <- "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/"
 ```
 
@@ -15,6 +16,84 @@ load(file.path(datadir, "SnpEffFilteredTibble.Rdata"))
 ```{r}
 head(VRtibble, 200)
 ```
+
+## Some summaries
+Summarize this data 
+
+```{r}
+VRtibble %>%
+  group_by(impact) %>%
+  filter(impact!="LOW",
+         !duplicated(snpID)) %>%
+  summarize(moderate=sum(impact=="MODERATE"),
+            high=sum(impact=="HIGH"),
+            total_gene=length(unique(GeneName)))
+```
+
+total moderate or high = 
+```{r}
+VRtibble %>%
+  filter(impact!="LOW",
+         !duplicated(snpID)) %>%
+  nrow()
+```
+
+table per tree
+```{r}
+snps_by_tree <- VRtibble %>%
+  filter(impact=="HIGH") %>%
+  group_by(sample) %>%
+  summarize(Ref=sum(GT=="0/0"),
+            Het=sum(GT=="0/1"),
+            Alt=sum(GT=="1/1"))
+
+snps_by_tree
+  
+```
+
+```{r}
+snps_by_tree %>%
+  pivot_longer(c(Ref, Het, Alt), names_to = "genotype", values_to = "sites") %>%
+  ggplot(aes(x=sample, y=sites, fill=genotype)) +
+  geom_col() +
+  theme(axis.text.x  =element_text(angle=90, hjust=1, vjust=0.5))
+  
+```
+gene table per tree
+```{r}
+genes_by_tree <- VRtibble %>%
+  filter(impact=="HIGH", GT=="1/1") %>%
+  group_by(sample) %>%
+  filter(!duplicated(GeneName)) %>%
+  summarize(Genes_Homozygous_Alt=n())
+
+genes_by_tree
+  
+```
+
+```{r}
+genes_by_tree %>%
+  ggplot(aes(x=sample, y=Genes_Homozygous_Alt)) +
+  geom_col() +
+  theme(axis.text.x  =element_text(angle=90, hjust=1, vjust=0.5))
+  
+```
+upset plot
+
+```{r, fig.width=10}
+ VRtibble %>%
+  filter(str_detect(sample, "XL", negate = TRUE)) %>%
+  filter(impact=="HIGH", GT=="1/1") %>%
+  group_by(sample) %>%
+  filter(!duplicated(GeneName)) %>%
+  select(GeneName, sample) %>%
+  table() %>%
+  as.data.frame.matrix() %>%
+upset(nsets=13, nintersects = 50, order.by = "freq" )
+```
+
+
+## pheno
 get the pheno data
 ```{r}
 
@@ -51,24 +130,6 @@ system.time(
     nest(data=c(sample, GT, Tolerance_Resistance))
 ) #16 seconds
 head(VRtibble)
-```
-
-Summarize this data 
-
-```{r}
-VRtibble %>%
-  group_by(impact) %>%
-  filter(impact!="LOW") %>%
-  summarize(moderate=sum(impact=="MODERATE"),
-            high=sum(impact=="HIGH"),
-            total_gene=length(unique(GeneName)))
-```
-
-total moderate or high = 
-```{r}
-VRtibble %>%
-  filter(impact!="LOW") %>%
-  nrow()
 ```
 
 
