@@ -1,0 +1,10 @@
+genes,AT.symbol,AGI,interpro.description,pident,length,evalue,bitscore,dnds
+augustus-1014_pilon-processed-gene-5.8,RAS1,AT1G09950,DOG1 domain profile.; Seed dormancy control,42.708,192,1.4e-47,154,4.13840469962967
+maker-431_pilon-augustus-gene-9.19,ATHB-7,AT2G46680,Lambda-repressor HTH signature; 'Homeobox' domain signature.; 'Homeobox' domain profile.; homeodomain; Homeobox domain; Homeobox associated leucine zipper,44.939,247,4.3599999999999997e-54,174,2.28982836627484
+augustus-266_pilon-processed-gene-97.305,ATHB-7,AT2G46680,'Homeobox' domain profile.; Homeobox domain; 'Homeobox' domain signature.; homeodomain; Homeobox associated leucine zipper; consensus disorder prediction,40.244,246,2.98e-38,132,2.14059342753392
+maker-74056_pilon-snap-gene-18.97,AtWRKY41,AT4G11070,WRKY DNA -binding domain; consensus disorder prediction; WRKY domain profile.,39.944,358,4.3e-71,224,2.05767633539289
+maker-261_pilon-snap-gene-47.3,ATWRKY40,AT1G80840,WRKY DNA -binding domain; consensus disorder prediction; WRKY domain profile.,42.643,333,4.39e-72,225,1.87781267076631
+augustus-542_pilon-processed-gene-26.72,NA,AT3G14880,DOG1 domain profile.; Seed dormancy control,35.135,259,3.23e-47,157,1.65346618451608
+augustus-353_pilon-processed-gene-14.64,ATHSFA2,AT2G26150,consensus disorder prediction; Heat shock factor (HSF) domain signature; HSF-type DNA-binding; HSF-type DNA-binding domain signature.,41.127,355,1.6499999999999998e-82,257,1.63030052772083
+maker-345_pilon-snap-gene-67.1,ATWRKY11,AT4G31550,Plant zinc cluster domain; WRKY domain profile.; WRKY DNA -binding domain,34.375,320,3.16e-48,164,1.50116346324547
+augustus-267_pilon-processed-gene-29.9,AT-HSFA3,AT5G03720,Heat shock factor (HSF) domain signature; consensus disorder prediction; HSF-type DNA-binding; HSF-type DNA-binding domain signature.,41.943,453,1.7e-97,300,1.44384471279706

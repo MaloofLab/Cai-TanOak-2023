@@ -1,0 +1,39 @@
+---
+title: "TransHet Sequence Alignment"
+output: html_notebook
+---
+
+One gene that comes up from the diplotype analysis is maker-72357_pilon-snap-gene-1.15, which has homology to an Arabidospis NBS-ARC LRR.  I'd like to do a sequence alignment of this gene and all of its variants to figure out what is going on...
+
+First, let's get the interpro annotation for this gene
+
+```{r}
+library(tidyverse)
+library(Biostrings)
+```
+
+```{r}
+target <- "maker-72357_pilon-snap-gene-1.15"
+```
+
+
+```{r}
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+head(interpro)
+```
+
+```{r}
+interpro %>%
+  filter(str_detect(X1, target),
+         !is.na(X13)) 
+```
+
+Let's also do a blast.  First get the sequence:
+
+```{r}
+prots <- readAAStringSet("../input/blast/TanOak.proteins.fa")
+
+as.character(prots[str_detect(names(prots),target)])
+
+```
+

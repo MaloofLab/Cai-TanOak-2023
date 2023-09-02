@@ -1,0 +1,102 @@
+---
+title: "04a_Annotate_all_with_Arabidopsis"
+author: "Julin Maloof"
+date: "2023-09-02"
+output: html_document
+---
+
+Pick a single Arabidopsis best hit for annotation
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+datadir <- "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/"
+
+```
+
+```{r}
+header <- c("query",
+            "subject",
+            "percentID",
+            "length",
+            "mismatch",
+            "gapopen",
+            "qstart",
+            "qend",
+            "sstart",
+            "send",
+            "evalue",
+            "bitscore"
+)
+
+blast <- read_csv("../output/TanOakVsA.t.blast_out.csv", col_names = header)
+
+head(blast)
+```
+
+```{r}
+blast.best <- blast %>% group_by(query) %>%
+  filter(row_number(desc(bitscore))==1)
+head(blast.best)
+```
+
+get annotation.  Download from https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20201231
+
+```{r}
+atDesc <- read_tsv("../input/Araport11_functional_descriptions_20201231.txt.gz") %>%
+  mutate(name = str_remove(name, "\\..*$")) %>%
+  rename_all(funs(str_c("At_", .))) %>%
+    filter(!duplicated(At_name)) %>% #not ideal
+  select(-At_gene_model_type)
+atDesc
+```
+
+```{r}
+atSymbol <- read_tsv("../input/gene_aliases_20201231.txt.gz") %>%
+    rename_all(funs(str_c("At_", .))) %>%
+  filter(!duplicated(At_name)) #not ideal
+atSymbol
+```
+
+```{r}
+blast.best <- blast.best %>%
+  mutate(AGI = str_remove(subject, "\\..*$")) %>%
+  left_join(atSymbol, by = c("AGI" = "At_name")) %>%
+  left_join(atDesc, by = c("AGI" = "At_name"))
+
+blast.best
+```
+
+
+## ADD INTERPRO SCAN ANNOTATION
+
+```{r}
+interpro <- read_tsv("../output/12_21_tanoak_interpro.tsv.gz", col_names = FALSE)
+interpro
+```
+
+```{r}
+blast_and_interpro <- interpro %>% 
+  dplyr::select(geneID=X1, description=X6 ) %>% 
+  mutate(description=str_replace_na(description, "")) %>%
+  group_by(geneID) %>%
+  summarize(interpro.description = str_c(description, collapse="; ")) %>%
+  ungroup() %>%
+  mutate(interpro.description=str_replace_all(interpro.description, "(; ){2,}", "; "),
+         interpro.description=str_remove(interpro.description, "(^; )|(; $)")) %>%
+  unique() %>% 
+  na.omit() %>% 
+  right_join(blast.best, by=c("geneID"="query")) %>%
+  select(geneID,interpro.description, everything())
+  
+blast_and_interpro
+```
+
+```{r}
+write_csv(blast_and_interpro, file="../output/Annotated_with_At_and_interpro.csv")
+write_csv(blast_and_interpro, file=file.path(datadir, "Annotated_with_At_and_interpro.csv"))
+
+```
