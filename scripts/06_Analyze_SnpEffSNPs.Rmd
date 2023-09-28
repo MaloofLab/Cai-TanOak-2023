@@ -18,7 +18,18 @@ head(VRtibble, 200)
 ```
 
 ## Some summaries
-Summarize this data 
+Summarize this data
+
+```{r}
+table(VRtibble$effect, VRtibble$impact) %>%
+  as.data.frame() %>%
+  rename(effect=Var1, impact=Var2, freq=Freq) %>%
+  pivot_wider(names_from = "impact", values_from = "freq") %>%
+  select(effect, HIGH, MODERATE, LOW) %>%
+  arrange(desc(HIGH), desc(MODERATE), desc(LOW)) %>%
+  write_csv("../output/impact.csv")
+```
+
 
 ```{r}
 VRtibble %>%
