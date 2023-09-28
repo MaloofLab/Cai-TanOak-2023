@@ -17,6 +17,19 @@ load(file.path(datadir, "SnpEffFilteredTibble.Rdata"))
 head(VRtibble, 200)
 ```
 
+Fix names
+
+```{r}
+VRtibble <- VRtibble %>%
+  mutate(sample=
+           { str_replace(sample, "52.81", "SM.52.81.cl1") %>% 
+               str_replace("LP.22.54", "SM.52.81.cl2") %>%
+               str_replace("SM.54.45", "SM.74.45.cl1") %>%
+               str_replace("SM.54.26", "SM.74.45.cl2") %>%
+               str_replace("(^[0-9])", "SM.\\1")}
+  )
+```
+
 ## Some summaries
 Summarize this data
 
@@ -91,9 +104,11 @@ genes_by_tree %>%
 ```
 upset plot
 
+filtered for no duplicated samples
 ```{r, fig.width=10}
  VRtibble %>%
   filter(str_detect(sample, "XL", negate = TRUE)) %>%
+  filter(str_detect(sample, "cl2", negate = TRUE)) %>%
   filter(impact=="HIGH", GT=="1/1") %>%
   group_by(sample) %>%
   filter(!duplicated(GeneName)) %>%
@@ -102,6 +117,19 @@ upset plot
   as.data.frame.matrix() %>%
 upset(nsets=13, nintersects = 50, order.by = "freq" )
 ```
+
+All samples
+```{r, fig.width=10}
+ VRtibble %>%
+  filter(impact=="HIGH", GT=="1/1") %>%
+  group_by(sample) %>%
+  filter(!duplicated(GeneName)) %>%
+  select(GeneName, sample) %>%
+  table() %>%
+  as.data.frame.matrix() %>%
+upset(nsets=19, nintersects = 50, order.by = "freq" )
+```
+
 
 
 ## pheno
