@@ -96,7 +96,7 @@ blast_and_interpro
 ```
 
 ```{r}
-write_csv(blast_and_interpro, file="../output/Annotated_with_At_and_interpro.csv")
-write_csv(blast_and_interpro, file=file.path(datadir, "Annotated_with_At_and_interpro.csv"))
+write_csv(blast_and_interpro, file="../output/Annotated_with_At_and_interpro.csv.gz")
+write_csv(blast_and_interpro, file=file.path(datadir, "Annotated_with_At_and_interpro.csv.gz"))
 
 ```
