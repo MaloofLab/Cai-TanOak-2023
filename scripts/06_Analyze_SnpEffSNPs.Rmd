@@ -62,6 +62,27 @@ VRtibble %>%
   nrow()
 ```
 
+## quality of SNPs in SM774.45 vs everyone else
+
+```{r}
+VRtibble %>%
+  filter(GT=="1/1") %>%
+  mutate(SM74.45=str_detect(sample, fixed("SM.74.45"))) %>%
+  ggplot(aes(x=SM74.45, y=QUAL)) +
+  geom_boxplot() +
+  scale_y_log10()
+```
+```{r}
+VRtibble %>%
+  filter(GT=="1/1") %>%
+  mutate(SM74.45=str_detect(sample, fixed("SM.74.45"))) %>%
+  ggplot(aes(x=SM74.45, y=AD)) +
+  scale_y_log10() +
+  geom_boxplot()
+```
+
+
+## Per Tree
 table per tree
 ```{r}
 snps_by_tree <- VRtibble %>%
