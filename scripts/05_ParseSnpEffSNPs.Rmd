@@ -44,6 +44,8 @@ bcftools convert --output-type z --exclude "INFO/ANN ~ 'intergenic_region'" coho
 tabix cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
 ```
 
+# Filtering for High/Moderate
+
 ## make contig lengths file for those contigs remaining after moderate/high filtering
 
 ```{r}
@@ -251,8 +253,151 @@ filter(impact != "MODIFIER")
 
 head(VRtibble)
 ```
+summary by effect:
+
+```{r}
+table(VRtibble$effect, VRtibble$impact) %>%
+  as.data.frame() %>%
+  rename(effect=Var1, impact=Var2, freq=Freq) %>%
+  pivot_wider(names_from = "impact", values_from = "freq") %>%
+  select(effect, HIGH, MODERATE, LOW) %>%
+  arrange(desc(HIGH), desc(MODERATE), desc(LOW)) %>%
+  write_csv("../output/impact_high_mod.csv")
+```
+
 
 ```{r}
 save(VRtibble, file=file.path(datadir, "SnpEffFilteredTibble.Rdata"))
+```
+
+# For all genic SNPS:
+
+
+## make contig lengths file for those contigs remaining after genic filtering
+
+```{r}
+contig.lengths.genic <-
+  system("bcftools view -h '/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz' | grep contig", inter=TRUE) %>%
+  as_tibble() %>%
+  mutate(value=str_remove_all(value, "(##contig=<ID=)|(length=)|>")) %>%
+  separate(value, into = c("name", "length"), sep=",", convert = TRUE )
+contig.lengths.genic
+```
+
+
+## Can I do all at once, since I have filtered this down to a reasonable size?
+
+
+```{r}
+tab.genic <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz"))
+
+system.time(
+  vcf.genic <-  readVcf(tab.genic)
+  )
+```
+
+
+### quality
+```{r}
+tibble(QUAL=rowRanges(vcf.genic)$QUAL) %>% 
+  ggplot(aes(x=QUAL)) +
+  geom_histogram(fill="skyblue") +
+  scale_x_log10() +
+  ggtitle("Quality") +
+  xlab("QUAL") +
+  ylab("Count")
+min(rowRanges(vcf.genic)$QUAL)
+```
+
+### Genotyped allele number
+This is the number of allele genotype calls made.  With 14 samples, the max here is 28
+```{r}
+info(vcf.genic)$AN %>% tibble(AN=.) %>%
+  ggplot(aes(x=AN)) +
+  geom_histogram(fill="red", binwidth = 1) +
+  ggtitle("Number of Alleles Called") +
+  xlab("Allele Number (AN)") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(2,40,2))
+```
+
+### Number of alternative alleles
+"1" means a b
+```{r}
+sapply(info(vcf.genic)$AC, length) %>% tibble(AC=.) %>%
+  ggplot(aes(x=AC)) +
+  geom_histogram(fill="springgreen2", binwidth = 1) +
+  ggtitle("Number of Alternate Alleles") +
+  xlab("Alternative alleles") +
+  ylab("Count") +
+  scale_x_continuous(breaks=seq(1,6,1))
+```
+
+Overall this looks like little filtering is needed.  But let's do a little.
+
+```{r}
+vcf.genic.filter <- vcf[rowRanges(vcf.genic)$QUAL > 50 &
+                    sapply(info(vcf.genic)$AC, length) == 1 & #stick with biallelic SNPs for now
+                    info(vcf.genic)$AN == 38] # require complete genotype info for now 
+length(vcf.genic)
+length(vcf.genic.filter)
+```
+
+Could do a VRanges object and convert to tibble:
+```{r}
+system.time(
+  vcf.genic.filter.VR <- as(vcf.genic.filter, "VRanges") 
+)
+```
+
+
+```{r}
+system.time(
+  VRtibble.genic <- tibble(
+                 seqname=as.character(seqnames(vcf.genic.filter.VR)),
+                 start=start(vcf.genic.filter.VR),
+                 end=end(vcf.genic.filter.VR),
+                 sample=as.character(sampleNames(vcf.genic.filter.VR)),
+                 ref=ref(vcf.genic.filter.VR),
+                 alt=alt(vcf.genic.filter.VR),
+                 RD=refDepth(vcf.genic.filter.VR),
+                 AD=altDepth(vcf.genic.filter.VR),
+                 as.data.frame(mcols(vcf.genic.filter.VR)[c("QUAL", "GT", "GQ", "PL", "ANN" )])
+                 ) %>%
+    mutate(snpID=str_c(seqname,start,sep=":"),
+           GT=str_replace(GT, stringr::fixed("|"), "/")) 
+) #35 seconds
+
+```
+
+reformat the snpEff annotation into tibble form
+```{r}
+annnames <- c("allele", "effect", "impact", "GeneName", "GeneID", "FeatureType", "FeatureID", "TranscriptType", "Rank_Total", "HGVS.c", "HGVS.p", "cDNApos_len", "CDSpos_len", "protpos_len", "distance", "warn")
+
+system.time(
+  VRtibble.genic <- VRtibble.genic %>% separate(ANN, sep = ",", into=c("ANN1","ANN2", "ANN3", "ANN4", "ANN5", "ANN6") ) %>%
+  pivot_longer(cols = starts_with("ANN"), names_to = "ANN_ID", values_to = "ANN", values_drop_na = TRUE) %>%
+  separate(ANN, into=annnames, sep = "\\|") %>%
+filter(impact != "MODIFIER")
+)
+
+head(VRtibble.genic)
+```
+
+Summarize by effect
+
+```{r}
+table(VRtibble.genic$effect, VRtibble$impact) %>%
+  as.data.frame() %>%
+  rename(effect=Var1, impact=Var2, freq=Freq) %>%
+  pivot_wider(names_from = "impact", values_from = "freq") %>%
+  select(effect, HIGH, MODERATE, LOW) %>%
+  arrange(desc(HIGH), desc(MODERATE), desc(LOW)) %>%
+  write_csv("../output/impact_all_genic.csv")
+```
+
+
+```{r}
+save(VRtibble.genic, file=file.path(datadir, "SnpEffAllGenicTibble.Rdata"))
 ```
 
