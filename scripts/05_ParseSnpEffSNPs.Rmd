@@ -24,6 +24,44 @@ samtools faidx "~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared d
 
 ## filter
 
+### filter to get a list of all SNPs that are homozygous ALT, so that we can update the fasta file to remove these
+
+```{bash, eval=FALSE}
+cd /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof\@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/
+
+module load bcftools # LSSC0
+
+bcftools view --include 'COUNT(GT="1/1" | GT="1|1")=19'  --output-type z cohort.all.genotyped.snpEff.vcf.bgz > cohort.all.genotyped.snpEff.homozygous.alt.vcf.bgz
+```
+
+Convert it to a bed
+```{bash, eval=FALSE}
+
+module load bedops/2.4.33
+
+bcftools view cohort.all.genotyped.snpEff.homozygous.alt.vcf.bgz | vcf2bed > cohort.all.genotyped.snpEff.homozygous.alt.bed
+```
+
+Filtering vcf to remove these:
+
+```{bash, eval=FALSE}
+bcftools view --exclude 'COUNT(GT="1/1" | GT="1|1")=19'  --output-type z cohort.all.genotyped.snpEff.vcf.bgz > cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz
+```
+
+Reality check:
+
+```{bash, eval=FALSE}
+bcftools view cohort.all.genotyped.snpEff.vcf.bgz | grep -v "#" | wc -l # 29947242
+bcftools view  cohort.all.genotyped.snpEff.homozygous.alt.vcf.bgz | grep -v "#" | wc -l # 58314
+bcftools view cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz | grep -v "#" | wc -l # 29888928
+```
+
+```{r}
+29888928 + 58314 == 29947242
+```
+
+
+
 ### for variants of moderate or high effect
 
 ```{bash, eval=FALSE}
