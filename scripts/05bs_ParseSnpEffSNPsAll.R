@@ -19,7 +19,7 @@ taskID <- commandArgs(trailingOnly = TRUE)[1]
 
 cat("task: ", taskID, "\n")
 
-tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.vcf.bgz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
