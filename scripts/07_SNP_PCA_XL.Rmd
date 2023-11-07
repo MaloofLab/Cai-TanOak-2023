@@ -16,7 +16,7 @@ outdir <- "../output/"
 ```
 
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.vcf.gz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz"))
 
 tab_seqnames <- seqnamesTabix(tab)
 
@@ -149,7 +149,7 @@ ggsave("../output/XL_PCA_length_100000000.pdf")
 ```{r, fig.asp=1}
 results %>% dplyr::select(trial, PCtibble) %>% 
   unnest(PCtibble) %>%
-  filter(trial==3) %>%
+  filter(trial==2) %>%
   ggplot(aes(x=PC1, y=PC2, label=sampleID, color=Tolerance_Resistance)) +
   geom_text_repel(size=4) + 
   geom_point(size=3) +
@@ -160,4 +160,10 @@ ggsave("../output/XL_PCA_length_100000000_single.png")
 
 ```
 
+```{r}
+results %>% dplyr::select(trial, PCtibble) %>% 
+  unnest(PCtibble) %>%
+  filter(trial==2) %>%
+  write_csv("../output/PCs_for_Brock.csv")
+```
 

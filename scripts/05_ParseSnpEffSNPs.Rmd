@@ -67,9 +67,9 @@ bcftools view cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz | grep -v "#
 ```{bash, eval=FALSE}
 cd /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof\@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/
 
-bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.all.genotyped.snpEff.vcf.bgz > cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
+bcftools convert --output-type z --include "INFO/ANN ~ 'HIGH' || INFO/ANN ~ 'MODERATE'" cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz  > cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_moderate_high.vcf.bgz
 
-tabix cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
+tabix cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_moderate_high.vcf.bgz
 ```
 
 ### to remove intergenic SNPs
@@ -77,9 +77,9 @@ tabix cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz
 ```{bash, eval=FALSE}
 cd /Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof\@ucdavis.edu/Shared\ drives/TanOak/new_12_2021_assembly/
 
-bcftools convert --output-type z --exclude "INFO/ANN ~ 'intergenic_region'" cohort.all.genotyped.snpEff.vcf.bgz > cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
+bcftools convert --output-type z --exclude "INFO/ANN ~ 'intergenic_region'" cohort.all.genotyped.snpEff.no.homozygous.alt.vcf.bgz > cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_no_intergenic.vcf.bgz
 
-tabix cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
+tabix cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_no_intergenic.vcf.bgz
 ```
 
 # Filtering for High/Moderate
@@ -88,7 +88,7 @@ tabix cohort.all.genotyped.snpEff.filtered_no_intergenic.vcf.bgz
 
 ```{r}
 contig.lengths <-
-  system("bcftools view -h '/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz' | grep contig", inter=TRUE) %>%
+  system("bcftools view -h '/Users/jmaloof/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/new_12_2021_assembly/cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_moderate_high.vcf.bgz' | grep contig", inter=TRUE) %>%
   as_tibble() %>%
   mutate(value=str_remove_all(value, "(##contig=<ID=)|(length=)|>")) %>%
   separate(value, into = c("name", "length"), sep=",", convert = TRUE )
@@ -100,7 +100,7 @@ contig.lengths
 
 load it
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_moderate_high.vcf.bgz"))
 vcfVR <- readVcfAsVRanges(tab, param=GRanges(seqnames = contig.lengths$name[1],
                                   ranges = IRanges(start = 1, end=contig.lengths$length[1])))
 vcf <-  readVcf(tab, param=GRanges(seqnames = contig.lengths$name[1],
@@ -197,7 +197,7 @@ VRtibble
 
 
 ```{r}
-tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.filtered_moderate_high.vcf.bgz"))
+tab <- TabixFile(file.path(datadir, "cohort.all.genotyped.snpEff.no.homozygous.alt.filtered_moderate_high.vcf.bgz"))
 
 system.time(
   vcf <-  readVcf(tab)
@@ -296,9 +296,9 @@ summary by effect:
 ```{r}
 table(VRtibble$effect, VRtibble$impact) %>%
   as.data.frame() %>%
-  rename(effect=Var1, impact=Var2, freq=Freq) %>%
+  dplyr::rename(effect=Var1, impact=Var2, freq=Freq) %>%
   pivot_wider(names_from = "impact", values_from = "freq") %>%
-  select(effect, HIGH, MODERATE, LOW) %>%
+  dplyr::select(effect, HIGH, MODERATE, LOW) %>%
   arrange(desc(HIGH), desc(MODERATE), desc(LOW)) %>%
   write_csv("../output/impact_high_mod.csv")
 ```

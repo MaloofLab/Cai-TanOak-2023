@@ -42,7 +42,7 @@ VRtibble %>%
             total_gene=length(unique(GeneName)))
 ```
 
-total moderate or high = 
+total moderate or high SNPs = 
 ```{r}
 VRtibble %>%
   filter(impact!="LOW",
@@ -50,23 +50,14 @@ VRtibble %>%
   nrow()
 ```
 
-## quality of SNPs in SM774.45 vs everyone else
+total genes with a a moderate or high SNP
 
 ```{r}
 VRtibble %>%
-  filter(GT=="1/1") %>%
-  mutate(SM74.45=str_detect(sample, fixed("SM.74.45"))) %>%
-  ggplot(aes(x=SM74.45, y=QUAL)) +
-  geom_boxplot() +
-  scale_y_log10()
-```
-```{r}
-VRtibble %>%
-  filter(GT=="1/1") %>%
-  mutate(SM74.45=str_detect(sample, fixed("SM.74.45"))) %>%
-  ggplot(aes(x=SM74.45, y=AD)) +
-  scale_y_log10() +
-  geom_boxplot()
+  filter(impact!="LOW") %>%
+  filter(!duplicated(GeneID)) %>%
+  nrow()
+  
 ```
 
 
@@ -95,7 +86,7 @@ snps_by_tree %>%
 gene table per tree
 ```{r}
 genes_by_tree <- VRtibble %>%
-  filter(impact=="HIGH", GT=="1/1") %>%
+  filter(impact!="LOW", GT=="1/1") %>%
   group_by(sample) %>%
   filter(!duplicated(GeneName)) %>%
   summarize(Genes_Homozygous_Alt=n())
@@ -108,8 +99,10 @@ genes_by_tree
 genes_by_tree %>%
   ggplot(aes(x=sample, y=Genes_Homozygous_Alt)) +
   geom_col() +
-  theme(axis.text.x  =element_text(angle=90, hjust=1, vjust=0.5))
-  
+  ylab("Genes Homozygous for Alternate") +
+  theme_bw() +
+  theme(axis.text.x  =element_text(angle=90, hjust=1, vjust=0.5)) 
+ggsave("~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/Figures for Paper/TanOak2A.png", dpi = 300)
 ```
 upset plot
 
@@ -118,7 +111,7 @@ filtered for no duplicated samples
  VRtibble %>%
   filter(str_detect(sample, "XL", negate = TRUE)) %>%
   filter(str_detect(sample, "cl2", negate = TRUE)) %>%
-  filter(impact=="HIGH", GT=="1/1") %>%
+  filter(impact!="LOW", GT=="1/1") %>%
   group_by(sample) %>%
   filter(!duplicated(GeneName)) %>%
   select(GeneName, sample) %>%
@@ -130,7 +123,7 @@ upset(nsets=13, nintersects = 50, order.by = "freq" )
 All samples
 ```{r, fig.width=10}
  VRtibble %>%
-  filter(impact=="HIGH", GT=="1/1") %>%
+  filter(impact!="LOW", GT=="1/1") %>%
   group_by(sample) %>%
   filter(!duplicated(GeneName)) %>%
   select(GeneName, sample) %>%

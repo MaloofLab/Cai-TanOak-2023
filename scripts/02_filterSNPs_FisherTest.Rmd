@@ -1,5 +1,5 @@
 ---
-title: "01_SNP_filtering"
+title: "02_SNP_filtering"
 author: "Julin Maloof"
 date: "01/15/2022"
 output: html_document
