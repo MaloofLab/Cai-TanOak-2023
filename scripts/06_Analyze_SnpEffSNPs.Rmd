@@ -158,7 +158,13 @@ samples <- unique(VRtibble$sample)
 
 pheno <- read_csv("../input/TanOakResistance.csv") %>%
   mutate(nameMatch=str_replace_all(Tanoak, "-","."),
-           nameMatch=str_replace(nameMatch, "SM\\.(52|54)\\.(42|81|97|37)", "\\1.\\2")) %>%
+           nameMatch=
+           { str_replace(nameMatch, "SM.52.81", "SM.52.81.cl1") %>% 
+               str_replace("LP.22.54", "SM.52.81.cl2") %>%
+               str_replace("SM.54.45", "SM.74.45.cl1") %>%
+               str_replace("SM.54.26", "SM.74.45.cl2") %>%
+               str_replace("(^[0-9])", "SM.\\1")}
+  ) %>%
   arrange(Rank_Sorting)
   
 
@@ -173,10 +179,20 @@ pheno.samples <- pheno %>% pull(nameMatch) %>% unique()
 samples[! samples %in% pheno.samples]
 ```
 
-
 join them
 ```{r}
 VRtibble <- VRtibble %>% inner_join(pheno, by=c("sample"="nameMatch"))
+```
+
+remove redundant samples:
+
+```{r}
+VRtibble %>% pull(sample) %>% unique() %>% sort()
+
+VRtibble <- VRtibble %>%
+  filter(str_detect(sample, "cl2", negate = TRUE))
+
+VRtibble %>% pull(sample) %>% unique() %>% sort()
 ```
 
 Group by SNP and nest so that we can do a Fisher test on each SNP
@@ -202,16 +218,12 @@ fisherp <- function(data){ #get p value from fisher test
 }
 ```
 
-```{r}
-data <- VRtibble$data[[1]]
-```
-
 
 ```{r}
 system.time(
 test <- VRtibble %>%
   mutate(fisher=map_dbl(data, fisherp))
-) # 227 seconds
+) # 85 seconds
 test %>% arrange(fisher) %>% head(200)
 ```
 
@@ -330,7 +342,7 @@ gene_summary_ann %>%
   ungroup() %>%
   mutate(avg.fdr = p.adjust(avg.p, method="fdr")) %>%
   select(min.p, avg.p, avg.fdr) %>%
-  arrange(avg.fdr)
+  arrange(avg.fdr, min.p)
 ```
 
 ```{r}
