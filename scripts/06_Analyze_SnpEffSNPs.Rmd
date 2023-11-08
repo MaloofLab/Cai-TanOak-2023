@@ -108,7 +108,7 @@ upset plot
 
 filtered for no duplicated samples
 ```{r, fig.width=10}
- VRtibble %>%
+p <- VRtibble %>%
   filter(str_detect(sample, "XL", negate = TRUE)) %>%
   filter(str_detect(sample, "cl2", negate = TRUE)) %>%
   filter(impact!="LOW", GT=="1/1") %>%
@@ -117,19 +117,35 @@ filtered for no duplicated samples
   select(GeneName, sample) %>%
   table() %>%
   as.data.frame.matrix() %>%
-upset(nsets=13, nintersects = 50, order.by = "freq" )
+upset(nsets=13, nintersects = 50, order.by = "freq", show.numbers = FALSE )
+p
+
+pdf("~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/Figures for Paper/TanOak2B_NoDups.pdf",
+       width=8, height = 5)
+p
+dev.off()
 ```
+
+
+
 
 All samples
 ```{r, fig.width=10}
- VRtibble %>%
+ p <- VRtibble %>%
   filter(impact!="LOW", GT=="1/1") %>%
   group_by(sample) %>%
   filter(!duplicated(GeneName)) %>%
   select(GeneName, sample) %>%
   table() %>%
   as.data.frame.matrix() %>%
-upset(nsets=19, nintersects = 50, order.by = "freq" )
+upset(nsets=19, nintersects = 50, show.numbers = FALSE, order.by = "freq", mb.ratio = c(0.6,0.4) )
+
+p
+
+pdf("~/Library/CloudStorage/GoogleDrive-jnmaloof@ucdavis.edu/Shared drives/TanOak/Figures for Paper/TanOak2B_alt_all.pdf",
+    width=8, height = 5)
+p
+dev.off()
 ```
 
 
