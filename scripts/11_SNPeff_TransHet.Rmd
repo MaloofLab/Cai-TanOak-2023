@@ -26,6 +26,18 @@ d
 res <- read_csv("../input/TanOakResistance.csv")
 res
 ```
+Check names
+```{r}
+trees.transhet <- d %>% pull(line) %>% unique() %>% sort()
+trees.transhet
+
+res$Tanoak
+
+#any genotyped lines missing from resistance data? (NL-2 expected)
+trees.transhet[! trees.transhet %in% res$Tanoak]
+```
+
+
 ```{r}
 d <- d %>% inner_join(res, by=c("line"="Tanoak"))
 d
