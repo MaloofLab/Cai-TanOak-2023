@@ -99,8 +99,13 @@ atDesc <- read_tsv("../input/Araport11_functional_descriptions_20201231.txt.gz")
   mutate(name = str_remove(name, "\\..*$")) %>%
   rename_all(funs(str_c("At_", .))) %>%
     filter(!duplicated(At_name)) %>% #not ideal
-  select(-At_gene_model_type)
+  dplyr::select(-At_gene_model_type)
 atDesc
+```
+```{r}
+dna.at <- dna.at %>%
+  left_join(atDesc, by=c("AGI"="At_name" ))
+dna.at
 ```
 
 
@@ -125,45 +130,5 @@ __ATWRKY11__ member of WRKY Transcription Factor; Group II-d; negative regulator
 __ATHSFA2__ member of Heat Stress Transcription Factor (Hsf) family. Involved in response to misfolded protein accumulation in the cytosol. Regulated by alternative splicing and non-sense-mediated decay.
 
 __AT-HSFA3__ Member of Heat Stress Transcription Factor (Hsf) family. Expression is regulated by DREB2A and in turn HSFA3 regulates the expression of hsps Hsp18.1-CI and Hsp26.5-MII35S. Involved in establishing thermotolerence.
-
-
-
-Annotate All    NOT WORKING...NEED TO REMOVE REDUNDANCY /PIVOT WIDER AND COMBINE COLUMNS, OR SOMETHING
-```{r}
-all.interpro <- interpro %>% 
-  dplyr::select(genes=X1, description=X6 ) %>% 
-  mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
-  unique() %>% 
-  na.omit() %>% 
-  right_join(dn_ds, by="genes") %>%
-  group_by(genes) %>%
-  summarize(interpro.description = str_c(description, collapse="; "), dnds=unique(dnds))
-  
-dna.interpro
-
-all.at <- Atblast %>%
-  dplyr::select(genes, AGI, pident, length, evalue, bitscore) %>%
-  mutate(genes=str_remove(genes, "-mRNA-.*")) %>%
-  right_join(interpro) %>%
-  group_by(genes) %>%
-  slice_max(order_by=bitscore, n=1) %>%
-  mutate(AGI=str_remove(AGI, "\\.[0-9]"),
-         AT.symbol = unlist(as.list(org.At.tairSYMBOL[AGI]))[[1]]) %>%
-  dplyr::select(genes, interpro.description, AGI, AT.symbol, everything()) %>%
-  arrange(desc(dnds))
-
-all.at
-```
-
-
-Let's blast a few of these.  First create fasta file of interesting proteins:
-
-```{r}
-peps <- readAAStringSet("../input/blast/TanOak.proteins.fa")
-names(peps) <- names(peps) %>% str_remove("-mRNA-.*")
-peps <- peps[DNA_binding_genes$genes]
-peps
-writeXStringSet(peps, "../output/DNA_binding_peps.fa")
-```
 
 
