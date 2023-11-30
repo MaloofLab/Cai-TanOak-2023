@@ -67,6 +67,8 @@ getPCs <- function(trial) {
   
   mat3 <- mat3[,apply(mat3, 2, function(x) !any(is.na(x)))]
   
+  print(dim(mat3))
+  
   rownames(mat3) <- rownames(mat3) %>% 
     str_replace("52.81", "SM.52.81.cl1") %>% 
     str_replace("LP.22.54", "SM.52.81.cl2") %>%
@@ -110,6 +112,12 @@ contig.lengths_tab <- contig.lengths_tab %>% arrange(desc(length)) %>%
 
 contig.lengths_tab
 ```
+
+Summarize group 2 since that is what is used for the paper.
+```{r}
+contig.lengths_tab %>% dplyr::filter(group==2) %>% summarize(contigs=n(), bp=sum(length))
+```
+
 
 ```{r}
 results <- tibble(trial=1:4)
