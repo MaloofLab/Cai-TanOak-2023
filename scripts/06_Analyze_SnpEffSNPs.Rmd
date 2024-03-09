@@ -50,6 +50,28 @@ VRtibble %>%
   nrow()
 ```
 
+total moderate and high:
+```{r}
+VRtibble %>%
+  filter(impact!="LOW") %>%
+  group_by(snpID) %>%
+  summarize(snpID, count=n(), high=any(impact=="HIGH"), moderate=any(impact=="MODERATE"), both=all(high, moderate)) %>%
+  filter(!duplicated(snpID), both==TRUE)
+```
+239 SNPs have both moderate and high impacts.
+
+Is this consistent?
+
+```{r}
+526584 + 77687 -239
+```
+
+
+```{r}
+VRtibble %>% filter(snpID=="158436_pilon:12808")
+```
+
+
 total genes with a a moderate or high SNP
 
 ```{r}
