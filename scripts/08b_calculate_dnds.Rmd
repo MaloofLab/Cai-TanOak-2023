@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # load in libraries
 library(tidyverse)
-library(Biostrings)
 library(seqinr)
 library(stringr)
 ```
